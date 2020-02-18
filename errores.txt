@@ -1,1 +1,0 @@
-la llamada a scan sobre el buffer 1 2 3 4 5 6 diciendo que hay 6 caracteres en la linea devuelve 1 2 3 4 5 1  pisando el ultimo y repitiendo el primero
