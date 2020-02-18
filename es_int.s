@@ -490,10 +490,9 @@ DMPILA:
 
 **************************** SCAN ************************************************************
 SCAN:  
-		 LINK 		A6,#0
+		 LINK 		A6,#0				*creo marco de pila
 		 MOVE.L		8(A6),A0			*A0=buffer
-		 MOVE.W		12(A6),D0      		*D0=descriptor
-		 								*creo marco de pila
+		 MOVE.W		12(A6),D0      		*D0=descriptor		 								
 		 CMP.W		#0,D0 				*miro a ver en que puerto va a leer
 		 BEQ		SCANA				*escribe en puerto A
 		 CMP.W		#1,D0
@@ -511,6 +510,7 @@ SCANA:
 		 CMP.W		#0,D2 				*LINEA=0?
 		 BEQ 		FINCEROA
 		 MOVE.W		14(A6),D1			*D1=tamaño
+		 SUB.W 		#1,D1               * Editado en 18/02/2020 para resolver el problema 1
 		 CMP.W 		D1,D2 				*COMPARO TAMAÑO Y LINEA
 		 BGT 		FINCEROA
 BUCSA:	 CMP.W		#0,D2 				*LINEA=0?
@@ -548,6 +548,7 @@ SCANB:
 		 CMP.W		#0,D2 				*LINEA=0?
 		 BEQ 		FINCEROB
 		 MOVE.W		14(A6),D1			*D1=tamaño
+		 SUB.W 		#1,D1               * Editado en 18/02/2020 para resolver el problema 1
 		 CMP.W 		D1,D2 				*COMPARO TAMAÑO Y LINEA
 		 BGT 		FINCEROB
 BUCSB:	 CMP.W		#0,D2 				*LINEA=0?
