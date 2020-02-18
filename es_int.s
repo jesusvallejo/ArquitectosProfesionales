@@ -732,7 +732,8 @@ INICIO:
 		MOVE.W			#13,D1
 		BSR				ESCCAR
 		MOVE.L			#0,A0 
-        MOVE.L			#BUFP,A0  
+        MOVE.L			#BUFP,A0
+			ADD.LA		#6,A0
             MOVE.W 		#0,D0
             MOVE.W 		#8,D3
             MOVE.W 		D3,-(A7)
