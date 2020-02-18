@@ -504,7 +504,8 @@ SCANA:
 		 
 		 MOVE.L 	#0,D0 				*D0=0
 		 BSR 		LINEA
-		 MOVE.W		#0,D0		  		*editado 18/02/2020
+		 MOVE.W		#0,D2		  		*editado 18/02/2020
+		 MOVE.W		#0,D3		  		*editado 18/02/2020
 		 MOVE.L 	D0,D2				*D2=LINEA
 		 MOVE.L 	D2,D3				*D3 REGISTRO POR SI ACASO CON N
 		 CMP.W		#0,D2 				*LINEA=0?
@@ -730,6 +731,7 @@ INICIO:
 		MOVE.W			#0,D0
 		MOVE.W			#13,D1
 		BSR				ESCCAR
+		MOVE.L			#0,A0 
         MOVE.L			#BUFP,A0  
             MOVE.W 		#0,D0
             MOVE.W 		#8,D3
