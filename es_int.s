@@ -503,9 +503,10 @@ SCAN:
 SCANA: 	 
 		 
 		 MOVE.L 	#0,D0 				*D0=0
-		 BSR 		LINEA 				*llamo a linea para saber cual es el tamaño DE linea
-		 MOVE.L 	D0,D2				D2=LINEA
-		 MOVE.L 	D2,D3				D3 REGISTRO POR SI ACASO CON N
+		 BSR 		LINEA
+		 MOVE.W		#0,D0		  		*editado 18/02/2020
+		 MOVE.L 	D0,D2				*D2=LINEA
+		 MOVE.L 	D2,D3				*D3 REGISTRO POR SI ACASO CON N
 		 CMP.W		#0,D2 				*LINEA=0?
 		 BEQ 		FINCEROA
 		 MOVE.W		14(A6),D1			*D1=tamaño
@@ -541,8 +542,8 @@ SCANB:
 		 
 		 MOVE.L 	#1,D0 				*D0=0
 		 BSR 		LINEA 				*llamo a linea para saber cual es el tamaño DE linea
-		 MOVE.L 	D0,D2				D2=LINEA
-		 MOVE.L 	D2,D3				D3 REGISTRO POR SI ACASO CON N
+		 MOVE.L 	D0,D2				*D2=LINEA
+		 MOVE.L 	D2,D3				*D3 REGISTRO POR SI ACASO CON N
 		 CMP.W		#0,D2 				*LINEA=0?
 		 BEQ 		FINCEROB
 		 MOVE.W		14(A6),D1			*D1=tamaño
@@ -731,7 +732,7 @@ INICIO:
 		BSR				ESCCAR
         MOVE.L			#BUFP,A0  
             MOVE.W 		#0,D0
-            MOVE.W 		#7,D3
+            MOVE.W 		#8,D3
             MOVE.W 		D3,-(A7)
             MOVE.W 		D0,-(A7)
             MOVE.L 		A0,-(A7)
