@@ -509,11 +509,11 @@ SCANA:
 		 MOVE.L 	D2,D3				*D3 REGISTRO POR SI ACASO CON N
 		 CMP.W		#0,D2 				*LINEA=0?
 		 BEQ 		FINCEROA
-		 MOVE.W		14(A6),D1			*D1=tamaño
-		 SUB.W 		#1,D1               * Editado en 18/02/2020 para resolver el problema 1
+		 MOVE.W		14(A6),D1			*D1=tamaño		 
 		 CMP.W 		D1,D2 				*COMPARO TAMAÑO Y LINEA
+		 
 		 BGT 		FINCEROA
-BUCSA:	 CMP.W		#0,D2 				*LINEA=0?
+BUCSA:	 	 CMP.W		#1,D2 				*LINEA=1? error 1 editado 18/02/2020
 		 BEQ 		FINSCANA
 		 MOVE.B 	#0,D0 				*PARAMETRO PARA LEECAR
 		 BSR 		LEECAR
@@ -548,10 +548,10 @@ SCANB:
 		 CMP.W		#0,D2 				*LINEA=0?
 		 BEQ 		FINCEROB
 		 MOVE.W		14(A6),D1			*D1=tamaño
-		 SUB.W 		#1,D1               * Editado en 18/02/2020 para resolver el problema 1
 		 CMP.W 		D1,D2 				*COMPARO TAMAÑO Y LINEA
 		 BGT 		FINCEROB
-BUCSB:	 CMP.W		#0,D2 				*LINEA=0?
+BUCSB:	 	
+		 CMP.W		#1,D2 				*LINEA=1? Error 1 editado 18/02/2020
 		 BEQ 		FINSCANB
 		 MOVE.B 	#1,D0 				*PARAMETRO PARA LEECAR
 		 BSR 		LEECAR
