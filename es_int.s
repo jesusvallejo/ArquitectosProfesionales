@@ -491,8 +491,9 @@ DMPILA:
 **************************** SCAN ************************************************************
 SCAN:  
 		 LINK 		A6,#0				*creo marco de pila
-		 MOVE.L		8(A6),A0			*A0=buffer
-		 MOVE.W		12(A6),D0      		*D0=descriptor		 								
+		 
+		 MOVE.W		12(A6),D0      		*D0=descriptor
+
 		 CMP.W		#0,D0 				*miro a ver en que puerto va a leer
 		 BEQ		SCANA				*escribe en puerto A
 		 CMP.W		#1,D0
@@ -500,7 +501,7 @@ SCAN:
 		 MOVE.L 	#-1,D0 				*D0=-1 SI NO ES NI 0 NI 1
 		 BRA 		DMPILAS
 SCANA: 	 
-		 
+
 		 MOVE.L 	#0,D0 				*D0=0
 		 BSR 		LINEA
 		 MOVE.W		#0,D2		  		*editado 18/02/2020
@@ -511,13 +512,15 @@ SCANA:
 		 BEQ 		FINCEROA
 		 MOVE.W		14(A6),D1			*D1=tamaño		 
 		 CMP.W 		D1,D2 				*COMPARO TAMAÑO Y LINEA
-		 
 		 BGT 		FINCEROA
-BUCSA:	 	 CMP.W		#1,D2 				*LINEA=1? error 1 editado 18/02/2020
+BUCSA:	 	 
+		 CMP.W		#0,D2 				*LINEA=0? error 1 editado 18/02/2020
 		 BEQ 		FINSCANA
 		 MOVE.B 	#0,D0 				*PARAMETRO PARA LEECAR
 		 BSR 		LEECAR
-		 MOVE.B 	D0,(A0)+			*COPIO EL CARACTER EN BUFFER 
+		 MOVE.L		8(A6),A0			*A0=buffer
+		 MOVE.B 	D0,(A0)+			*COPIO EL CARACTER EN BUFFER
+		 MOVE.L		A0,8(A6)
 		 MOVE.L		#BSA,A4
 		 ADDA.L		#2001,A4
 		 CMP.L		A4,A0				*MIRO A VER SI HA LLEGADO AL FINAL DEL buffer
@@ -551,7 +554,7 @@ SCANB:
 		 CMP.W 		D1,D2 				*COMPARO TAMAÑO Y LINEA
 		 BGT 		FINCEROB
 BUCSB:	 	
-		 CMP.W		#1,D2 				*LINEA=1? Error 1 editado 18/02/2020
+		 CMP.W		#0,D2 				*LINEA=1? Error 1 editado 18/02/2020
 		 BEQ 		FINSCANB
 		 MOVE.B 	#1,D0 				*PARAMETRO PARA LEECAR
 		 BSR 		LEECAR
@@ -721,32 +724,18 @@ INICIO:
 		MOVE.W			#2,D1
 		BSR				ESCCAR
 		MOVE.W			#0,D0
-		MOVE.W			#3,D1
-		BSR				ESCCAR
-		MOVE.W			#0,D0
-		MOVE.W			#4,D1
-		BSR				ESCCAR
-		MOVE.W			#0,D0
-		MOVE.W			#5,D1
-		BSR				ESCCAR
-		MOVE.W			#0,D0
-		MOVE.W			#6,D1
-		BSR				ESCCAR
-		MOVE.W			#0,D0
-		MOVE.W			#7,D1
-		BSR				ESCCAR
-		MOVE.W			#0,D0
 		MOVE.W			#13,D1
 		BSR				ESCCAR
 		MOVE.L			#0,A0 
-        	MOVE.L			#BUFP,A0
-        	MOVE.W 		#0,D0
-        	MOVE.W 		#8,D3
-        	MOVE.W 		D3,-(A7)
-        	MOVE.W 		D0,-(A7)
-        	MOVE.L 		A0,-(A7)
-        	BSR 		SCAN
-        	BREAK
+        MOVE.L			#BUFP,A0
+        MOVE.W 		#0,D0
+        MOVE.W 		#3,D3
+        MOVE.W 		D3,-(A7)
+        MOVE.W 		D0,-(A7)
+        MOVE.L 		A0,-(A7) * 32E4
+        BSR 		SCAN
+        BREAK
+       
 
 
 **************************** FIN PROGRAMA PRINCIPAL ******************************************
