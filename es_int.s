@@ -401,14 +401,13 @@ FLINEA:
 ********** PRINT ********************
 PRINT:
 		 
-		 LINK 		A6,#0
+		 LINK 		A6,#-12				*creo marco de pila
 		 MOVE.L		8(A6),A0			*A0=buffer
 		 MOVE.W		12(A6),D0      		*D0=descriptor
 		 MOVE.W 	14(A6),D3			*D1=TAMA?
-		 MOVE.L		A6,A7
-		 								*creo marco de pila
-*		 CMP.W		#0,D1				*SI TAMA? = 0 --> DESTRUCCION DEL MARCO DE PILA
-*		 BEQ		DMPILA
+		 
+
+		 								
 		 CMP.W		#0,D0 				*miro a ver en que puerto va a leer
 		 BEQ		PRINTA				*escribe en puerto A
 		 CMP.W		#1,D0				
@@ -426,29 +425,30 @@ BUCPA:
 		ADD.L 		#1,D2			*CONTADOR++
 		CMP.L 		#13,D1			*MIRO A VER SI ES RETORNO DE CARRO
 		BEQ			ACTTA
-		MOVE.L 		A0,-(A7)		*GUARDO EN PILA
-		MOVE.W 		D0,-(A7)
-		MOVE.W 		D3,-(A7)
-		MOVE.L 		D2,-(A7)
+		MOVE.L 		A0,-12(A6)		*GUARDO EN PILA
+		MOVE.W 		D0,-8(A6)
+		MOVE.W 		D3,-6(A6)
+		MOVE.L 		D2,-4(A6)
 		BSR			ESCCAR			*LLAMO A ESCCAR
 
 		CMP.L		#-1,D0 			*COMPRUEBO VALOR DEVUELTO POR ESCCAR
 		BEQ			DMPILA
-		MOVE.L 		(A7)+,D2		*RECUPERO REGISTROS
-		MOVE.W 		(A7)+,D3
-		MOVE.W 		(A7)+,D0
-		MOVE.L 		(A7)+,A0
+		MOVE.L 		-12(A6),A0		*RECUPERO REGISTROS
+		MOVE.W 		-8(A6),D0
+		MOVE.W 		-6(A6),D3
+		MOVE.L 		-4(A6),D2
 		BRA 		BUCPA
 
 
-ACTTA:	
+ACTTA:	 MOVE.L		#13,D1
+		 BSR 		ESCCAR
 		 MOVE.L 	D2,D0 			*METO EL NUMERO DE CARACTERES ESCRITOS
-*		 MOVE.W 	#$2700,SR
+		 MOVE.W 	#$2700,SR
 		 MOVE.L		IMRC,D5
 		 BSET		#0,D5
 		 MOVE.B		D5,IMRC
 		 MOVE.B		D5,IMR
-*		 MOVE.W		#$2000,SR
+		 MOVE.W		#$2000,SR
 		 BRA 		DMPILA		 
 		 
 		 
@@ -461,30 +461,33 @@ BUCPB:
 		ADD.L 		#1,D2			*CONTADOR++
 		CMP.L 		#13,D1			*MIRO A VER SI ES RETORNO DE CARRO
 		BEQ			ACTTB
-		MOVE.L 		A0,-(A7)		*GUARDO EN PILA
-		MOVE.W 		D0,-(A7)
-		MOVE.W 		D3,-(A7)
-		MOVE.L 		D2,-(A7)
 
+		MOVE.L 		A0,-12(A6)		*GUARDO EN PILA
+		MOVE.W 		D0,-8(A6)
+		MOVE.W 		D3,-6(A6)
+		MOVE.L 		D2,-4(A6)
 		BSR			ESCCAR			*LLAMO A ESCCAR
 
 		CMP.L		#-1,D0 			*COMPRUEBO VALOR DEVUELTO POR ESCCAR
 		BEQ			DMPILA
-		MOVE.L 		(A7)+,D2		*RECUPERO REGISTROS
-		MOVE.W 		(A7)+,D3
-		MOVE.W 		(A7)+,D0
-		MOVE.L 		(A7)+,A0
+		MOVE.L 		-12(A6),A0		*RECUPERO REGISTROS
+		MOVE.W 		-8(A6),D0
+		MOVE.W 		-6(A6),D3
+		MOVE.L 		-4(A6),D2
 		BRA 		BUCPB
 
 
-ACTTB:	
+ACTTB:	 
+		
+		 MOVE.L		#13,D1
+		 BSR 		ESCCAR
 		 MOVE.L 	D2,D0 			*METO EL NUMERO DE CARACTERES ESCRITOS
-*		 MOVE.W 	#$2700,SR
+		 MOVE.W 	#$2700,SR
 		 MOVE.L		IMRC,D5
 		 BSET		#4,D5
 		 MOVE.B		D5,IMRC
 		 MOVE.B		D5,IMR
-*		 MOVE.W		#$2000,SR			
+		 MOVE.W		#$2000,SR			
 		 
 DMPILA:  
 		 UNLK 		A6
@@ -585,15 +588,19 @@ FINSCANB: MOVE.L 	D3,D0 				*D0=N
 		  BRA DMPILAS
 DMPILAS:  
 		UNLK 	A6
-		 RTS
-,
+		RTS
+
 
 **************************** FIN SCAN ********************************************************
 
 *****************************RTI**************************************************************
 
 RTI:
-	
+
+
+
+
+		
 	MOVE.L		#0,D1
 	MOVE.L		#-1,A5
 	MOVE.B		IMRC,D1				*COPIO EN UN REGISTRO LA COPIA DEL IMR 		
@@ -699,83 +706,44 @@ FINRB:
 
 
 **********************************FIN RTI*****************************************************
-
+******PRUEBA PRINT
 
 BUFP:       DS.B        2100           *Buffer para lectura y escritura de caracteres  
 CONTLP:     DC.W        0           *Contador de lineas
 CONTCP:     DC.W        0          *Contador de caracteres
 DIRLECP:    DC.L        0           *Direccion de lectura para SCAN
 DIRESCP:    DC.L        0           *Direccion de escritura para PRINT
-TAMEP:      DC.W        0           *Tamaño de escritura para PRINT
+TAMEP:      DC.W        0           *TamaÃ±o de escritura para PRINT
 DESAP:      EQU         0          *Descriptor de linea A
 DESBP:      EQU         1          *Descriptor de linea B 
 NLINP:      EQU         1           *Numero de lineas a leer
-TAMLP:      EQU         30           *Tamaño de linea para SCAN
-TAMBP:      EQU         30           *Tamaño de bloque para PRINT
+TAMLP:      EQU         30           *TamaÃ±o de linea para SCAN
+TAMBP:      EQU         30           *TamaÃ±o de bloque para PRINT
 
 INICIO:
-            MOVE.L      #BUS_ERROR,8      * Bus error handler
-            MOVE.L      #ADDRESS_ER,12     * Address error handler
-            MOVE.L      #ILLEGAL_IN,16     * Illegal instruction handler
-            MOVE.L      #PRIV_VIOLT,32     * Privilege violation handler  
+            *MOVE.L      #BUS_ERROR,8      * Bus error handler
+            *MOVE.L      #ADDRESS_ER,12     * Address error handler
+            *MOVE.L      #ILLEGAL_IN,16     * Illegal instruction handler
+            *MOVE.L      #PRIV_VIOLT,32     * Privilege violation handler  
 
             BSR         INIT
             MOVE.W      #$2000,SR       *Permite interrupciones
 
-BUCPR:      MOVE.W      #0,CONTCP       *Inicializa contador de caracteres
-            MOVE.W      #NLINP,CONTLP     *Inicializa contador de lineas
-            MOVE.L      #BUFP,DIRLECP     *Direccion de lectura (comienzo del buffer)
-OTRAL:      MOVE.W      #TAMLP,-(A7)     *Tamaño maximo de la linea
-            MOVE.W      #DESBP,-(A7)     *Puerto B
-            MOVE.L      DIRLECP,-(A7)     *Direccion de lectura
-ESPL:       BSR         SCAN
-            CMP.L       #0,D0
-            BEQ         ESPL         *Si no se ha leido una linea de intenta de nuevo
-            ADDA.L      #8,A7         *Restablece la pila
-            ADD.L       D0,DIRLECP       *Calcula la nueva direccion de lectura
-            ADD.W       D0,CONTCP       *Actualiza el numero de caracteres leidos
-            SUB.W       #1,CONTLP       *Actualiza el numero de lineas leidas. Si no
-            BNE         OTRAL         *se han leido todas las lineas se vuelve a leer
-
-            MOVE.L      #BUFP,DIRLECP     *Direccion de lectura (comienzo del buffer)
-OTRAE:      MOVE.W      #TAMBP,TAMEP     *Tamaño de escritura = Tamaño de bloque
-ESPE:       MOVE.W      TAMEP,-(A7)     *Tamaño de escritura
-            MOVE.W      #DESAP,-(A7)     *Puerto A
-            MOVE.L      DIRLECP,-(A7)     * Direccion de lectura
-            BSR         PRINT 
-            ADD.L       #8,A7         *Restablece la pila
-            ADD.L       D0,DIRLECP       *Calcula la nueva direccion del buffer 
-            SUB.W       D0,CONTCP       *Actualiza el contador de caracteres
-            BEQ         SALIR         *Si no quedas caracteres se acaba
-            SUB.W       D0,TAMEP       *Actualiza el tamaño de escritura
-            BNE         ESPE         *Si no se ha escrito todo el bloque se insiste
-            CMP.W       #TAMBP,CONTCP     *Si el nº de caracteres que quedan es menor que el 
-                            *tamaño establecido se transimite ese numero
-            BHI         OTRAE        *Sigueinte bloque
-            MOVE.W      CONTCP,TAMEP
-            BRA         ESPE        *Siguiente bloque
-
-SALIR:      BRA         BUCPR
-
-FINP:       MOVE.W #-1,D7 *DEVUELEVE FFFF EN D7
+            MOVE.L 		#BUFP,A0
+            MOVE.B		#1,(A0)+
+            MOVE.B		#2,(A0)+
+            MOVE.B		#3,(A0)+
+            MOVE.B		#4,(A0)+
+            MOVE.B		#5,(A0)+
+            MOVE.B		#13,(A0)+
+            MOVE.L 		#BUFP,A0
+            MOVE.W 		#1,D0
+            MOVE.W 		#6,D3
+            MOVE.W 		D3,-(A7)
+            MOVE.W 		D0,-(A7)
+            MOVE.L 		A0,-(A7)
+            MOVE.L 		#0,D3 *PARA TEST EL PASO DE PARAMETRO POR PILA
+            MOVE.L 		#0,D0
+            MOVE.L 		#0,A0
+            BSR 		PRINT
             BREAK
-
-BUS_ERROR:
-			MOVE.W #-2,D7 *DEVUELEVE FFFE EN D7
-            BREAK
-            NOP
-ADDRESS_ER: 
-			MOVE.W #-3,D7 *DEVUELEVE FFFD EN D7
-			BREAK
-            NOP
-
-ILLEGAL_IN:
-			MOVE.W #-4,D7 *DEVUELEVE FFFC EN D7
-            BREAK
-            NOP
-PRIV_VIOLT:
-			MOVE.W #-5,D7 *DEVUELEVE FFFB EN D7
-            BREAK
-            NOP
-
-		BREAK
