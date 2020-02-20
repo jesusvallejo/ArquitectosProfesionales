@@ -61,7 +61,7 @@ INIT:
 	    MOVE.B          #%00000000,MR2B     * Eco desactivado.
 		MOVE.B          #%11001100,CSRB     * Velocidad = 38400 bps.
 		MOVE.B          #%00000101,CRB      * Transmision y recepcion activados.
-		MOVE.B			#00000040,IVR		* Inicializa el vector
+		MOVE.B			#$00000040,IVR		* Inicializa el vector  * ESTABA MAL CORREGIDO 20/20/2020
 		MOVE.B			#%00010001,IMR		* Inicializa interrupciones escritura
 		MOVE.B			#%00010001,IMRC		* Inicializa interrupciones escritura 			
 		MOVE.B			#%00100010,ISR		* Inicializa interrupciones lectura
@@ -405,6 +405,7 @@ PRINT:
 		 MOVE.L		8(A6),A0			*A0=buffer
 		 MOVE.W		12(A6),D0      		*D0=descriptor
 		 MOVE.W 	14(A6),D3			*D1=TAMA?
+		 MOVE.L		A6,A7
 		 								*creo marco de pila
 *		 CMP.W		#0,D1				*SI TAMA? = 0 --> DESTRUCCION DEL MARCO DE PILA
 *		 BEQ		DMPILA
@@ -593,7 +594,8 @@ DMPILAS:
 
 RTI:
 	
-	MOVE.W		#0,D1
+	MOVE.L		#0,D1
+	MOVE.L		#-1,A5
 	MOVE.B		IMRC,D1				*COPIO EN UN REGISTRO LA COPIA DEL IMR 		
 	AND.B		ISR,D1	 			*FUNCION AND EN IMR Y ISR
 	BTST		#0,D1				*MIRO EL BIT 0 DE D1
