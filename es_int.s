@@ -3,7 +3,7 @@
         ORG     $0
         DC.L    $8000           * Pila
         DC.L    INICIO          * PC
-        ORG     $400
+        ORG		$400
 
 * Definici�n de equivalencias
 *********************************
@@ -27,25 +27,27 @@ IMR     EQU     $effc0B       * de mascara de interrupcion A (escritura)
 ISR     EQU     $effc0B       * de estado de interrupcion A (lectura)
 IVR		EQU		$effc19		  * declara el vector de interrupcion
 
-**************************** INIT *************************************************************
+**************************** Memory *************************************************************
+		
+
 BPA:	DS.B 	2001
 BPB:	DS.B 	2001
 BSA:	DS.B 	2001
-BSB:	DS.B 	2001
-*punteros 
-PPAE:	DC.L	0
-PPAL:	DC.L	0
-PPBE:	DC.L	0
-PPBL:	DC.L	0
-PSAE:	DC.L	0
-PSAL:	DC.L	0
-PSBE:	DC.L	0
-PSBL:	DC.L	0
+BSB:	DS.B 	20 *punteros BUFFER
+PPAL:	DC.L	1 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero print a lectura
+PPAE:	DC.L	1 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero print a escritura
+PPBE:	DC.L	1 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero print b escritura
+PPBL:	DC.L	1 *EDITADO 20/02/2020 , ANTES UN DC.l 0 
+PSAE:	DC.L	1 *EDITADO 20/02/2020 , ANTES UN DC.l 0 
+PSAL:	DC.L	1 *EDITADO 20/02/2020 , ANTES UN DC.l 0 
+PSBE:	DC.L	1 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero scan b escritura
+PSBL:	DC.L	1 *EDITADO 20/02/2020 , ANTES UN DC.l 0 
 
 IMRC: 	DS.B	2
 	
-
+**************************** INIT *************************************************************
 INIT:
+
 	    MOVE.B          #%00010000,CRA      * Reinicia el puntero MR1
 	    MOVE.B          #%00000011,MR1A     * 8 bits por caracter.
 	    MOVE.B          #%00000000,MR2A     * Eco desactivado.
@@ -393,7 +395,6 @@ FLINEA:
 
 **** FIN LINEA ********
 		
-**************************** FIN INIT *********************************************************
 
 ********** PRINT ********************
 PRINT:
@@ -450,7 +451,7 @@ ACTTA:
 		 
 		 
 PRINTB:
-		ADD.L 		#2,D0 			*PREPARO D0 PARA ESCCAR
+		ADD.L 		#2,D0 			*PREPARO D0 PARA ESCCAR    a lo mejr es better usar move
 		MOVE.L 		#0,D2 			*D2=CONTADOR
 BUCPB:
 		MOVE.B		(A0)+,D1		*OBTENGO EL CARACTER DEL buffer
@@ -461,6 +462,7 @@ BUCPB:
 		MOVE.W 		D0,-(A7)
 		MOVE.W 		D3,-(A7)
 		MOVE.L 		D2,-(A7)
+
 		BSR			ESCCAR			*LLAMO A ESCCAR
 
 		CMP.L		#-1,D0 			*COMPRUEBO VALOR DEVUELTO POR ESCCAR
@@ -491,9 +493,7 @@ DMPILA:
 **************************** SCAN ************************************************************
 SCAN:  
 		 LINK 		A6,#0				*creo marco de pila
-		 
 		 MOVE.W		12(A6),D0      		*D0=descriptor
-
 		 CMP.W		#0,D0 				*miro a ver en que puerto va a leer
 		 BEQ		SCANA				*escribe en puerto A
 		 CMP.W		#1,D0
@@ -514,13 +514,13 @@ SCANA:
 		 CMP.W 		D1,D2 				*COMPARO TAMA�O Y LINEA
 		 BGT 		FINCEROA
 BUCSA:	 	 
-		 CMP.W		#0,D2 				*LINEA=0? error 1 editado 18/02/2020
+		 CMP.W		#0,D2 				*LINEA=0?
 		 BEQ 		FINSCANA
 		 MOVE.B 	#0,D0 				*PARAMETRO PARA LEECAR
 		 BSR 		LEECAR
-		 MOVE.L		8(A6),A0			*A0=buffer
+		 MOVE.L		8(A6),A0			*A0=buffer CARGO EL Buffer
 		 MOVE.B 	D0,(A0)+			*COPIO EL CARACTER EN BUFFER
-		 MOVE.L		A0,8(A6)
+		 MOVE.L		A0,8(A6)            * PUSH A PILA PARA VNZAR 
 		 MOVE.L		#BSA,A4
 		 ADDA.L		#2001,A4
 		 CMP.L		A4,A0				*MIRO A VER SI HA LLEGADO AL FINAL DEL buffer
@@ -558,7 +558,9 @@ BUCSB:
 		 BEQ 		FINSCANB
 		 MOVE.B 	#1,D0 				*PARAMETRO PARA LEECAR
 		 BSR 		LEECAR
-		 MOVE.B 	D0,(A0)+			*COPIO EL CARACTER EN BUFFER 
+		 MOVE.L		8(A6),A0			*A0=buffer CARGO EL Buffer
+		 MOVE.B 	D0,(A0)+			*COPIO EL CARACTER EN BUFFER
+		 MOVE.L		A0,8(A6)            * PUSH A PILA PARA VNZAR 
 		 MOVE.L		#BSB,A4
 		 ADDA.L		#2001,A4
 		 CMP.L		A4,A0				*MIRO A VER SI HA LLEGADO AL FINAL DEL buffer
@@ -581,7 +583,7 @@ FINSCANB: MOVE.L 	D3,D0 				*D0=N
 DMPILAS:  
 		UNLK 	A6
 		 RTS
-
+,
 
 **************************** FIN SCAN ********************************************************
 
@@ -589,6 +591,7 @@ DMPILAS:
 
 RTI:
 	
+	MOVE.W		#0,D1
 	MOVE.B		IMRC,D1				*COPIO EN UN REGISTRO LA COPIA DEL IMR 		
 	AND.B		ISR,D1	 			*FUNCION AND EN IMR Y ISR
 	BTST		#0,D1				*MIRO EL BIT 0 DE D1
@@ -693,7 +696,7 @@ FINRB:
 
 **********************************FIN RTI*****************************************************
 
-**************************** PROGRAMA PRINCIPAL **********************************************
+
 BUFP:       DS.B        2100           *Buffer para lectura y escritura de caracteres  
 CONTLP:     DC.W        0           *Contador de lineas
 CONTCP:     DC.W        0          *Contador de caracteres
@@ -707,36 +710,73 @@ TAMLP:      EQU         30           *Tamaño de linea para SCAN
 TAMBP:      EQU         30           *Tamaño de bloque para PRINT
 
 INICIO:
-
-            *MOVE.L      #BUS_ERROR,8      * Bus error handler
-            *MOVE.L      #ADDRESS_ER,12     * Address error handler
-            *MOVE.L      #ILLEGAL_IN,16     * Illegal instruction handler
-            *MOVE.L      #PRIV_VIOLT,32     * Privilege violation handler  
+            MOVE.L      #BUS_ERROR,8      * Bus error handler
+            MOVE.L      #ADDRESS_ER,12     * Address error handler
+            MOVE.L      #ILLEGAL_IN,16     * Illegal instruction handler
+            MOVE.L      #PRIV_VIOLT,32     * Privilege violation handler  
 
             BSR         INIT
-
             MOVE.W      #$2000,SR       *Permite interrupciones
 
-        MOVE.W			#0,D0
-		MOVE.W			#1,D1
-		BSR				ESCCAR
-		MOVE.W			#0,D0
-		MOVE.W			#2,D1
-		BSR				ESCCAR
-		MOVE.W			#0,D0
-		MOVE.W			#13,D1
-		BSR				ESCCAR
-		MOVE.L			#0,A0 
-        MOVE.L			#BUFP,A0
-        MOVE.W 		#0,D0
-        MOVE.W 		#3,D3
-        MOVE.W 		D3,-(A7)
-        MOVE.W 		D0,-(A7)
-        MOVE.L 		A0,-(A7) * 32E4
-        BSR 		SCAN
-        BREAK
-       
+BUCPR:      MOVE.W      #0,CONTCP       *Inicializa contador de caracteres
+            MOVE.W      #NLINP,CONTLP     *Inicializa contador de lineas
+            MOVE.L      #BUFP,DIRLECP     *Direccion de lectura (comienzo del buffer)
+OTRAL:      MOVE.W      #TAMLP,-(A7)     *Tamaño maximo de la linea
+            MOVE.W      #DESBP,-(A7)     *Puerto B
+            MOVE.L      DIRLECP,-(A7)     *Direccion de lectura
+ESPL:       BSR         SCAN
+            CMP.L       #0,D0
+            BEQ         ESPL         *Si no se ha leido una linea de intenta de nuevo
+            ADDA.L      #8,A7         *Restablece la pila
+            ADD.L       D0,DIRLECP       *Calcula la nueva direccion de lectura
+            ADD.W       D0,CONTCP       *Actualiza el numero de caracteres leidos
+            SUB.W       #1,CONTLP       *Actualiza el numero de lineas leidas. Si no
+            BNE         OTRAL         *se han leido todas las lineas se vuelve a leer
+
+            MOVE.L      #BUFP,DIRLECP     *Direccion de lectura (comienzo del buffer)
+OTRAE:      MOVE.W      #TAMBP,TAMEP     *Tamaño de escritura = Tamaño de bloque
+ESPE:       MOVE.W      TAMEP,-(A7)     *Tamaño de escritura
+            MOVE.W      #DESAP,-(A7)     *Puerto A
+            MOVE.L      DIRLECP,-(A7)     * Direccion de lectura
+            BSR         PRINT 
+            ADD.L       #8,A7         *Restablece la pila
+            ADD.L       D0,DIRLECP       *Calcula la nueva direccion del buffer 
+            SUB.W       D0,CONTCP       *Actualiza el contador de caracteres
+            BEQ         SALIR         *Si no quedas caracteres se acaba
+            SUB.W       D0,TAMEP       *Actualiza el tamaño de escritura
+            BNE         ESPE         *Si no se ha escrito todo el bloque se insiste
+            CMP.W       #TAMBP,CONTCP     *Si el nº de caracteres que quedan es menor que el 
+                            *tamaño establecido se transimite ese numero
+            BHI         OTRAE        *Sigueinte bloque
+            MOVE.W      CONTCP,TAMEP
+            BRA         ESPE        *Siguiente bloque
+
+SALIR:      BRA         BUCPR
+
+FINP:       MOVE.W #-1,D7 *DEVUELEVE FFFF EN D7
+            BREAK
+
+BUS_ERROR:
+			MOVE.W #-2,D7 *DEVUELEVE FFFE EN D7
+            BREAK
+            NOP
+ADDRESS_ER: 
+			MOVE.W #-3,D7 *DEVUELEVE FFFD EN D7
+			BREAK
+            NOP
+
+ILLEGAL_IN:
+			MOVE.W #-4,D7 *DEVUELEVE FFFC EN D7
+            BREAK
+            NOP
+PRIV_VIOLT:
+			MOVE.W #-5,D7 *DEVUELEVE FFFB EN D7
+            BREAK
+            NOP
+	
 
 
-**************************** FIN PROGRAMA PRINCIPAL ******************************************
 
+
+		
+		BREAK
