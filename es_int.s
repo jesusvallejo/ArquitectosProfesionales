@@ -604,7 +604,7 @@ RTI:
 	MOVE.L		#0,D1
 	MOVE.L		#-1,A5
 	MOVE.B		IMRC,D1				*COPIO EN UN REGISTRO LA COPIA DEL IMR 		
-	AND.B		ISR,D1	 			*FUNCION AND EN IMR Y ISR
+	AND.B		IMR,D1	 			*FUNCION AND entre irm y imrc editado 20/02/2020
 	BTST		#0,D1				*MIRO EL BIT 0 DE D1
 	BEQ			TA
 	BTST		#1,D1				*MIRO EL BIT 1 DE D1
@@ -642,7 +642,7 @@ FINTA:
 		  BCLR			#0,IMR 			*INHIBO INTERRUPCIONES EN TA
 		  BCLR 			#0,IMRC
 FINTAF:   
-		  RTS
+		  RTE
 
 
 TB:
@@ -673,7 +673,7 @@ FINTB:
 		  BCLR			#4,IMR 			*INHIBO INTERRUPCIONES EN TB
 		  BCLR 			#4,IMRC
 FINTBF:   
-		  RTS
+		  RTE
 
 
 RA:
@@ -687,7 +687,7 @@ FINRAINI:
 		  BCLR 			#1,IMRC
 		  BRA 			FINRA 		
 FINRA:  
- 		 RTS
+ 		 RTE
 
 
 
@@ -702,12 +702,10 @@ FINRBINI:
 		  BCLR 			#5,IMRC
 		  BRA 			FINRB 		
 FINRB:  
- 		 RTS
+ 		 RTE
 
 
 **********************************FIN RTI*****************************************************
-******PRUEBA PRINT
-
 BUFP:       DS.B        2100           *Buffer para lectura y escritura de caracteres  
 CONTLP:     DC.W        0           *Contador de lineas
 CONTCP:     DC.W        0          *Contador de caracteres
@@ -721,29 +719,68 @@ TAMLP:      EQU         30           *TamaÃ±o de linea para SCAN
 TAMBP:      EQU         30           *TamaÃ±o de bloque para PRINT
 
 INICIO:
-            *MOVE.L      #BUS_ERROR,8      * Bus error handler
-            *MOVE.L      #ADDRESS_ER,12     * Address error handler
-            *MOVE.L      #ILLEGAL_IN,16     * Illegal instruction handler
-            *MOVE.L      #PRIV_VIOLT,32     * Privilege violation handler  
+            MOVE.L      #BUS_ERROR,8      * Bus error handler
+            MOVE.L      #ADDRESS_ER,12     * Address error handler
+            MOVE.L      #ILLEGAL_IN,16     * Illegal instruction handler
+            MOVE.L      #PRIV_VIOLT,32     * Privilege violation handler  
 
             BSR         INIT
             MOVE.W      #$2000,SR       *Permite interrupciones
 
-            MOVE.L 		#BUFP,A0
-            MOVE.B		#1,(A0)+
-            MOVE.B		#2,(A0)+
-            MOVE.B		#3,(A0)+
-            MOVE.B		#4,(A0)+
-            MOVE.B		#5,(A0)+
-            MOVE.B		#13,(A0)+
-            MOVE.L 		#BUFP,A0
-            MOVE.W 		#1,D0
-            MOVE.W 		#6,D3
-            MOVE.W 		D3,-(A7)
-            MOVE.W 		D0,-(A7)
-            MOVE.L 		A0,-(A7)
-            MOVE.L 		#0,D3 *PARA TEST EL PASO DE PARAMETRO POR PILA
-            MOVE.L 		#0,D0
-            MOVE.L 		#0,A0
-            BSR 		PRINT
+BUCPR:      MOVE.W      #0,CONTCP       *Inicializa contador de caracteres
+            MOVE.W      #NLINP,CONTLP     *Inicializa contador de lineas
+            MOVE.L      #BUFP,DIRLECP     *Direccion de lectura (comienzo del buffer)
+OTRAL:      MOVE.W      #TAMLP,-(A7)     *TamaÃ±o maximo de la linea
+            MOVE.W      #DESBP,-(A7)     *Puerto B
+            MOVE.L      DIRLECP,-(A7)     *Direccion de lectura
+ESPL:       BSR         SCAN
+            CMP.L       #0,D0
+            BEQ         ESPL         *Si no se ha leido una linea de intenta de nuevo
+            ADDA.L      #8,A7         *Restablece la pila
+            ADD.L       D0,DIRLECP       *Calcula la nueva direccion de lectura
+            ADD.W       D0,CONTCP       *Actualiza el numero de caracteres leidos
+            SUB.W       #1,CONTLP       *Actualiza el numero de lineas leidas. Si no
+            BNE         OTRAL         *se han leido todas las lineas se vuelve a leer
+
+            MOVE.L      #BUFP,DIRLECP     *Direccion de lectura (comienzo del buffer)
+OTRAE:      MOVE.W      #TAMBP,TAMEP     *TamaÃ±o de escritura = TamaÃ±o de bloque
+ESPE:       MOVE.W      TAMEP,-(A7)     *TamaÃ±o de escritura
+            MOVE.W      #DESAP,-(A7)     *Puerto A
+            MOVE.L      DIRLECP,-(A7)     * Direccion de lectura
+            BSR         PRINT 
+            ADD.L       #8,A7         *Restablece la pila
+            ADD.L       D0,DIRLECP       *Calcula la nueva direccion del buffer 
+            SUB.W       D0,CONTCP       *Actualiza el contador de caracteres
+            BEQ         SALIR         *Si no quedas caracteres se acaba
+            SUB.W       D0,TAMEP       *Actualiza el tamaÃ±o de escritura
+            BNE         ESPE         *Si no se ha escrito todo el bloque se insiste
+            CMP.W       #TAMBP,CONTCP     *Si el nÂº de caracteres que quedan es menor que el 
+                            *tamaÃ±o establecido se transimite ese numero
+            BHI         OTRAE        *Sigueinte bloque
+            MOVE.W      CONTCP,TAMEP
+            BRA         ESPE        *Siguiente bloque
+
+SALIR:      BRA         BUCPR
+
+FINP:        
             BREAK
+
+BUS_ERROR:
+            BREAK
+            NOP
+ADDRESS_ER: BREAK
+            NOP
+
+ILLEGAL_IN:
+            BREAK
+            NOP
+PRIV_VIOLT:
+            BREAK
+            NOP
+	
+
+
+
+
+		
+		BREAK
