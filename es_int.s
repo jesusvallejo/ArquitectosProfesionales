@@ -5,13 +5,13 @@
         DC.L    INICIO          * PC
         ORG		$400
 
-* Definición de equivalencias
+* Definici? de equivalencias
 *********************************
 
 MR1A    EQU     $effc01       * de modo A (escritura)
-MR2A    EQU     $effc01       * de modo A (2º escritura)
+MR2A    EQU     $effc01       * de modo A (2? escritura)
 MR1B    EQU     $effc11       * de modo B (escritura)
-MR2B    EQU     $effc11       * de modo B (2º escritura)
+MR2B    EQU     $effc11       * de modo B (2? escritura)
 SRA     EQU     $effc03       * de estado A (lectura)
 SRB		EQU	    $effc13
 CSRA    EQU     $effc03       * de seleccion de reloj A (escritura)
@@ -33,15 +33,17 @@ IVR		EQU		$effc19		  * declara el vector de interrupcion
 BPA:	DS.B 	2001
 BPB:	DS.B 	2001
 BSA:	DS.B 	2001
-BSB:	DS.B 	20 *punteros BUFFER
-PPAL:	DC.L	1 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero print a lectura
-PPAE:	DC.L	1 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero print a escritura
-PPBE:	DC.L	1 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero print b escritura
-PPBL:	DC.L	1 *EDITADO 20/02/2020 , ANTES UN DC.l 0 
-PSAE:	DC.L	1 *EDITADO 20/02/2020 , ANTES UN DC.l 0 
-PSAL:	DC.L	1 *EDITADO 20/02/2020 , ANTES UN DC.l 0 
-PSBE:	DC.L	1 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero scan b escritura
-PSBL:	DC.L	1 *EDITADO 20/02/2020 , ANTES UN DC.l 0 
+BSB:	DS.B 	2001
+
+ *punteros BUFFER
+PPAL:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero print a lectura
+PPAE:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero print a escritura
+PPBE:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero print b escritura
+PPBL:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 
+PSAE:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 
+PSAL:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 
+PSBE:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero scan b escritura
+PSBL:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 
 
 IMRC: 	DS.B	2
 	
@@ -402,9 +404,9 @@ PRINT:
 		 LINK 		A6,#0
 		 MOVE.L		8(A6),A0			*A0=buffer
 		 MOVE.W		12(A6),D0      		*D0=descriptor
-		 MOVE.W 	14(A6),D3			*D1=TAMAÑO
+		 MOVE.W 	14(A6),D3			*D1=TAMA?
 		 								*creo marco de pila
-*		 CMP.W		#0,D1				*SI TAMAÑO = 0 --> DESTRUCCION DEL MARCO DE PILA
+*		 CMP.W		#0,D1				*SI TAMA? = 0 --> DESTRUCCION DEL MARCO DE PILA
 *		 BEQ		DMPILA
 		 CMP.W		#0,D0 				*miro a ver en que puerto va a leer
 		 BEQ		PRINTA				*escribe en puerto A
@@ -510,8 +512,8 @@ SCANA:
 		 MOVE.L 	D2,D3				*D3 REGISTRO POR SI ACASO CON N
 		 CMP.W		#0,D2 				*LINEA=0?
 		 BEQ 		FINCEROA
-		 MOVE.W		14(A6),D1			*D1=tamaño		 
-		 CMP.W 		D1,D2 				*COMPARO TAMAÑO Y LINEA
+		 MOVE.W		14(A6),D1			*D1=tama?		 
+		 CMP.W 		D1,D2 				*COMPARO TAMA? Y LINEA
 		 BGT 		FINCEROA
 BUCSA:	 	 
 		 CMP.W		#0,D2 				*LINEA=0?
@@ -545,13 +547,13 @@ FINSCANA: MOVE.L 	D3,D0 				*D0=N
 SCANB: 	 
 		 
 		 MOVE.L 	#1,D0 				*D0=0
-		 BSR 		LINEA 				*llamo a linea para saber cual es el tamaño DE linea
+		 BSR 		LINEA 				*llamo a linea para saber cual es el tama? DE linea
 		 MOVE.L 	D0,D2				*D2=LINEA
 		 MOVE.L 	D2,D3				*D3 REGISTRO POR SI ACASO CON N
 		 CMP.W		#0,D2 				*LINEA=0?
 		 BEQ 		FINCEROB
-		 MOVE.W		14(A6),D1			*D1=tamaño
-		 CMP.W 		D1,D2 				*COMPARO TAMAÑO Y LINEA
+		 MOVE.W		14(A6),D1			*D1=tama?
+		 CMP.W 		D1,D2 				*COMPARO TAMA? Y LINEA
 		 BGT 		FINCEROB
 BUCSB:	 	
 		 CMP.W		#0,D2 				*LINEA=1? Error 1 editado 18/02/2020
@@ -560,7 +562,7 @@ BUCSB:
 		 BSR 		LEECAR
 		 MOVE.L		8(A6),A0			*A0=buffer CARGO EL Buffer
 		 MOVE.B 	D0,(A0)+			*COPIO EL CARACTER EN BUFFER
-		 MOVE.L		A0,8(A6)            * PUSH A PILA PARA VNZAR 
+		 MOVE.L		A0,8(A6)            * actualizo PILA PARA VNZAR 
 		 MOVE.L		#BSB,A4
 		 ADDA.L		#2001,A4
 		 CMP.L		A4,A0				*MIRO A VER SI HA LLEGADO AL FINAL DEL buffer
@@ -773,10 +775,5 @@ PRIV_VIOLT:
 			MOVE.W #-5,D7 *DEVUELEVE FFFB EN D7
             BREAK
             NOP
-	
 
-
-
-
-		
 		BREAK
