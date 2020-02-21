@@ -596,24 +596,42 @@ DMPILAS:
 *****************************RTI**************************************************************
 
 RTI:
+* GUARDAR EN PILA D0-D5 A0-A4 , 6X2 + 5X4 = 32 BYTES A RESERVAR PARA GUARDAR 
+		LINK A6,#-32
+	
+		MOVE.L 		D0,-32(A6)
+		MOVE.L 		D1,-30(A6)
+		MOVE.L 		D2,-28(A6)
+		MOVE.L 		D3,-26(A6)
+		MOVE.L 		D4,-24(A6)
+		MOVE.L 		D5,-22(A6)
+		MOVE.L 		A0,-20(A6)
+		MOVE.L 		A1,-16(A6)
+		MOVE.L 		A2,-12(A6)
+		MOVE.L 		A3,-8(A6)
+		MOVE.L 		A4,-4(A6)
+
+	
 
 
 
 
-		
-	MOVE.L		#0,D1
-	MOVE.L		#-1,A5
-	MOVE.B		IMRC,D1				*COPIO EN UN REGISTRO LA COPIA DEL IMR 		
-	AND.B		IMR,D1	 			*FUNCION AND entre irm y imrc editado 20/02/2020
-	BTST		#0,D1				*MIRO EL BIT 0 DE D1
-	BEQ			TA
-	BTST		#1,D1				*MIRO EL BIT 1 DE D1
-	BEQ			RA
-	BTST		#4,D1				*MIRO EL BIT 4 DE D1
-	BEQ			TB
-	BTST		#5,D1				*MIRO EL BIT 5 DE D1
-	BEQ			RB
 
+
+***********************************************************************************************		
+		MOVE.L		#0,D1
+		MOVE.L		#-1,A5
+		MOVE.B		IMRC,D1				*COPIO EN UN REGISTRO LA COPIA DEL IMR 		
+		AND.B		ISR,D1	 			*FUNCION AND entre iSR y imrc editado 21/02/2020
+		BTST		#0,D1				*MIRO EL BIT 0 DE D1
+		BEQ			TA
+		BTST		#1,D1				*MIRO EL BIT 1 DE D1
+		BEQ			RA
+		BTST		#4,D1				*MIRO EL BIT 4 DE D1
+		BEQ			TB
+		BTST		#5,D1				*MIRO EL BIT 5 DE D1
+		BEQ			RB
+**********************************************************************************************
 TA:
 	
 			MOVE.L		#0,D6			*RETORNO DE CARRO A 0
@@ -641,10 +659,11 @@ RETCATA:
 FINTA: 	  
 		  BCLR			#0,IMR 			*INHIBO INTERRUPCIONES EN TA
 		  BCLR 			#0,IMRC
+		  MOVE.B		IMRC,D0			*check si esta clear  BORRAR EN ENTREGA
 FINTAF:   
-		  RTE
+		  BRA 			FINRTI
 
-
+****************************************************************************************
 TB:
 	
 			MOVE.L		#0,D6			*RETORNO DE CARRO A 0
@@ -672,10 +691,11 @@ RETCATB:
 FINTB: 	  
 		  BCLR			#4,IMR 			*INHIBO INTERRUPCIONES EN TB
 		  BCLR 			#4,IMRC
+		  MOVE.B		IMRC,D0			*check si esta clear  BORRAR EN ENTREGA
 FINTBF:   
-		  RTE
+		  BRA 			FINRTI
 
-
+***********************************************************************************************
 RA:
 		  MOVE.B 		RBA,D1			*CARACTER PARA ESCCAR
 		  MOVE.L 		#0,D0 			*BUFFER PARA ESCCAR(RBA)
@@ -685,10 +705,10 @@ RA:
 FINRAINI: 
 		  BCLR			#1,IMR 			*INHIBO INTERRUPCIONES EN RA
 		  BCLR 			#1,IMRC
-		  BRA 			FINRA 		
-FINRA:  
- 		 RTE
+		  MOVE.B		IMRC,D0			*check si esta clear  BORRAR EN ENTREGA
+		  BRA 			FINRTI 		
 
+************************************************************************************************
 
 
 RB:
@@ -700,9 +720,27 @@ RB:
 FINRBINI: 
 		  BCLR			#5,IMR 			*INHIBO INTERRUPCIONES EN RB
 		  BCLR 			#5,IMRC
-		  BRA 			FINRB 		
-FINRB:  
- 		 RTE
+		  MOVE.B		IMRC,D0			*check si esta clear  BORRAR EN ENTREGA
+		  BRA 			FINRTI 		
+
+***************************************************************************************************		 
+		 
+FINRTI:
+
+
+		MOVE.L 		-32(A6),D0
+		MOVE.L 		-30(A6),D1
+		MOVE.L 		-28(A6),D2
+		MOVE.L 		-26(A6),D3
+		MOVE.L 		-24(A6),D4
+		MOVE.L 		-22(A6),D5
+		MOVE.L 		-20(A6),A0
+		MOVE.L 		-16(A6),A1
+		MOVE.L 		-12(A6),A2
+		MOVE.L 		-8(A6),A3
+		MOVE.L 		-4(A6),A4
+		UNLK 		A6
+		RTE
 
 
 **********************************FIN RTI*****************************************************
