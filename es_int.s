@@ -154,11 +154,11 @@ LESA: 		*LEECAR SCAN A
 		CMP.L			A4,A3		*comparo A4,A3
 		BEQ				FLESA		
 		MOVE.L			A3,PSAL		*guardo en la direccion el avance del puntero
-		BRA FINL		
+		BRA FINLE		
 FLESA:	*FIN LEECAR SCAN A
 		MOVE.L			#BSA,A3		*muevo el puntero a la direccion inicial
 		MOVE.L			A3,PSAL	    *guardo en la direccion el avance del puntero
-		BRA FINL
+		BRA FINLE
 		
 LESB: 	*LEECAR SCAN B
 		MOVE.L 			PSBE,A2		*guardo puntero de escritura de A(scan)
@@ -171,11 +171,11 @@ LESB: 	*LEECAR SCAN B
 		CMP.L			A4,A3		*comparo A4,A3
 		BEQ				FLESB		
 		MOVE.L			A3,PSBL		*guardo en la direccion el avance del puntero
-		BRA FINL		
+		BRA FINLE		
 FLESB:	*FIN LEECAR SCAN B
 		MOVE.L			#BSB,A3		*muevo el puntero a la direccion inicial
 		MOVE.L			A3,PSBL		*guardo en la direccion el avance del puntero
-		BRA FINL
+		BRA FINLE
 		
 LEPA: 	*LEECAR PRINT A
 		MOVE.L 			PPAE,A2		*guardo puntero de escritura de A(scan)
@@ -188,11 +188,11 @@ LEPA: 	*LEECAR PRINT A
 		CMP.L			A4,A3		*comparo A4,A3								 
 		BEQ				FLEPA												    
 		MOVE.L			A3,PPAL		*guardo en la direccion el avance del puntero
-		BRA FINL
+		BRA FINLE
 FLEPA:	*FIN LEECAR PRINT A
 		MOVE.L			#BPA,A3		*muevo el puntero a la direccion Inicia 	MAL TIENE QUE METER #BPA
 		MOVE.L			A3,PPAL	*guardo en la direccion el avance del puntero
-		BRA FINL
+		BRA FINLE
 		
 LEPB: 	*LEECAR PRINT B	
 		MOVE.L 			PPBE,A2		*guardo puntero de escritura de B(scan)
@@ -343,7 +343,7 @@ EPB:		*ESCCAR PRINT B
 			CMP.L 			A0,A1			*A0=A1??
 			BEQ				EPBFB 			*FINAL DE BUFFER 
 			CMP.L			A0,A2
-			BNE				FNEPB	
+			BNE				FEPB	
 			MOVE.L 			#-1,D0
 			BRA FINE			
 EPBFB:		*ESCCAR PRINT B FIN DE BUFFER
@@ -565,7 +565,7 @@ PRINT:
 		 CMP.W		#1,D0				
 		 BEQ 		PRINTB 				*escribe en puerto B 
 		 MOVE.L 	#-1,D0 				*D0=-1 SI NO ES NI 0 NI 1
-		 BRA 		DMPILA
+		 BRA 		DMPILAP
 
 		 
 		 
@@ -579,9 +579,9 @@ BUCPA:
 		BEQ			ACTTA
 		BSR			ESCCAR			*LLAMO A ESCCAR
 		CMP.L		#-1,D0 			*COMPRUEBO VALOR DEVUELTO POR ESCCAR
-		BEQ			DMPILA
+		BEQ			DMPILAP
 		CMP.L 		D2,D1			*MIRO A VER SI HEMOS LLEGADO HASTA TAMAÑO
-		BEQ			DMPILA
+		BEQ			DMPILAP
 		BRA 		BUCPA
 
 
@@ -594,7 +594,7 @@ ACTTA:	 MOVE.L		#13,D1
 		 MOVE.B		D5,IMRC
 		 MOVE.B		D5,IMR
 		 MOVE.W		#$2000,SR
-		 BRA 		DMPILA		 
+		 BRA 		DMPILAP		 
 		 
 		 
 		 
@@ -608,9 +608,9 @@ BUCPB:
 		BEQ			ACTTB
 		BSR			ESCCAR			*LLAMO A ESCCAR
 		CMP.L		#-1,D0 			*COMPRUEBO VALOR DEVUELTO POR ESCCAR
-		BEQ			DMPILA
+		BEQ			DMPILAP
 		CMP.L 		D2,D1			*MIRO A VER SI HEMOS LLEGADO HASTA TAMAÑO
-		BEQ			DMPILA
+		BEQ			DMPILAP
 		BRA 		BUCPB
 
 ACTTB:	 
@@ -770,7 +770,6 @@ DMPILAS:
 
 RTI:
 * GUARDAR EN PILA D0-D5 A0-A4 , 6X2 + 5X4 = 32 BYTES A RESERVAR PARA GUARDAR 
-		LINK A6,#-32
 	
 		LINK A6,#-56  *Guardamos todos los registros para asegurar que no hay problemas de concurrencia
 		MOVE.L 		D0,-56(A6) 
