@@ -511,10 +511,7 @@ FLV: 	*FIN LINEA VACIA
 		
 FINLA:  *FIN LINEA
 		ADD.L		#1,D3
-		MOVE.L 		#0,D0
-		ADD.L 		D3,D0
-		RTS
-		
+		MOVE.L 		D3,D0
 		*MOVE.L 	-56(A6),D0 *NO SE GUARDA EN PILA YA QUE LO USAMOS
 		MOVE.L 		-52(A6),D1
 		MOVE.L 		-48(A6),D2
@@ -538,7 +535,7 @@ FINLA:  *FIN LINEA
 PRINT:
 		 
 		LINK A6,#-56  *Guardamos todos los registros para asegurar que no hay problemas de concurrencia
-		MOVE.L 		D0,-56(A6) 
+		*MOVE.L 		D0,-56(A6) *DEVUELVE PARAMETRO
 		MOVE.L 		D1,-52(A6)
 		MOVE.L 		D2,-48(A6)
 		MOVE.L 		D3,-44(A6)
@@ -580,7 +577,7 @@ BUCPA:
 		BSR			ESCCAR			*LLAMO A ESCCAR
 		CMP.L		#-1,D0 			*COMPRUEBO VALOR DEVUELTO POR ESCCAR
 		BEQ			DMPILAP
-		CMP.L 		D2,D1			*MIRO A VER SI HEMOS LLEGADO HASTA TAMAÑO
+		CMP.L 		D2,D3			*MIRO A VER SI HEMOS LLEGADO HASTA TAMAÑO
 		BEQ			DMPILAP
 		BRA 		BUCPA
 
@@ -588,18 +585,14 @@ BUCPA:
 ACTTA:	 MOVE.L		#13,D1
 		 BSR 		ESCCAR
 		 MOVE.L 	D2,D0 			*METO EL NUMERO DE CARACTERES ESCRITOS
-		 MOVE.W 	#$2700,SR
-		 MOVE.L		IMRC,D5
-		 BSET		#0,D5
-		 MOVE.B		D5,IMRC
-		 MOVE.B		D5,IMR
-		 MOVE.W		#$2000,SR
+		 BSET		#0,IMRC
+		 MOVE.B		IMRC,IMR
 		 BRA 		DMPILAP		 
 		 
 		 
 		 
 PRINTB:
-		ADD.L 		#2,D0 			*PREPARO D0 PARA ESCCAR    a lo mejr es better usar move
+		ADD.L 		#3,D0 			*PREPARO D0 PARA ESCCAR    a lo mejr es better usar move
 		MOVE.L 		#0,D2 			*D2=CONTADOR
 BUCPB:
 		MOVE.B		(A0)+,D1		*OBTENGO EL CARACTER DEL buffer
@@ -609,7 +602,7 @@ BUCPB:
 		BSR			ESCCAR			*LLAMO A ESCCAR
 		CMP.L		#-1,D0 			*COMPRUEBO VALOR DEVUELTO POR ESCCAR
 		BEQ			DMPILAP
-		CMP.L 		D2,D1			*MIRO A VER SI HEMOS LLEGADO HASTA TAMAÑO
+		CMP.L 		D2,D3			*MIRO A VER SI HEMOS LLEGADO HASTA TAMAÑO
 		BEQ			DMPILAP
 		BRA 		BUCPB
 
@@ -618,15 +611,13 @@ ACTTB:
 		 MOVE.L		#13,D1
 		 BSR 		ESCCAR
 		 MOVE.L 	D2,D0 			*METO EL NUMERO DE CARACTERES ESCRITOS
-		 MOVE.W 	#$2700,SR
-		 MOVE.L		IMRC,D5
-		 BSET		#4,D5
-		 MOVE.B		D5,IMRC
-		 MOVE.B		D5,IMR
-		 MOVE.W		#$2000,SR			
+		 BSET		#4,IMRC
+		 MOVE.B		IMRC,IMR
+		 BRA 		DMPILAP	
+				
 		 
 DMPILAP:  
-		MOVE.L 		-56(A6),D0
+		*MOVE.L 		-56(A6),D0 *DEVUELVE PARAMETRO
 		MOVE.L 		-52(A6),D1
 		MOVE.L 		-48(A6),D2
 		MOVE.L 		-44(A6),D3
@@ -648,7 +639,7 @@ DMPILAP:
 *********************************
 SCAN:  
 		LINK A6,#-56  *Guardamos todos los registros para asegurar que no hay problemas de concurrencia
-		MOVE.L 		D0,-56(A6) 
+		*MOVE.L 		D0,-56(A6) *DEVUELVE PARAMETRO
 		MOVE.L 		D1,-52(A6)
 		MOVE.L 		D2,-48(A6)
 		MOVE.L 		D3,-44(A6)
@@ -701,13 +692,7 @@ FINCEROA: MOVE.L 	#0,D0 				*DEVUELVE 0 EN D0
 		  BRA DMPILAS
 FINSCANA: 
 		 MOVE.L 	D3,D0 				*D0=N	
-*		  MOVE.W 	#$2700,SR
-		  MOVE.L		IMRC,D5
-		  BSET			#1,D5
-		  MOVE.B		D5,IMRC
-		  MOVE.B		D5,IMR
-*		  MOVE.W		#$2000,SR
-		  BRA DMPILAS
+		 BRA DMPILAS
 
 
 SCANB: 	 
@@ -715,9 +700,9 @@ SCANB:
 		 MOVE.L 	#1,D0 				*D0=0
 		 BSR 		LINEA 				*llamo a linea para saber cual es el tama? DE linea
 		 MOVE.L 	D0,D2				*D2=LINEA
-		 MOVE.L 	D2,D3				*D3 REGISTRO TAMAÑO ESCRITO
 		 CMP.W		#0,D2 				*LINEA=0?
 		 BEQ 		FINCEROB
+		 MOVE.L 	D2,D3				*D3 REGISTRO TAMAÑO ESCRITO
 		 CMP.W 		D1,D2 				*COMPARO TAMA? Y LINEA
 		 BGT 		FINCEROB
 BUCSB:	 	
@@ -738,15 +723,9 @@ PUNTSB:	 MOVE.L 	#BSB,A0				*SI HA LLEGADO AL FINAL EL PUNTERO SE VA AL PRINCIPI
 FINCEROB: MOVE.L 	#0,D0 				*DEVUELVE 0 EN D0
 		  BRA DMPILAS
 FINSCANB: MOVE.L 	D3,D0 				*D0=N
-*		  MOVE.W 	#$2700,SR
-		  MOVE.L	IMRC,D5
-		  BSET		#5,D5
-		  MOVE.B	D5,IMRC
-		  MOVE.B	D5,IMR
-*		  MOVE.W	#$2000,SR
 		  BRA DMPILAS
 DMPILAS:  
-		MOVE.L 		-56(A6),D0
+		*MOVE.L 		-56(A6),D0 *DEVUELVE PARAMETRO
 		MOVE.L 		-52(A6),D1
 		MOVE.L 		-48(A6),D2
 		MOVE.L 		-44(A6),D3
@@ -793,25 +772,34 @@ RTI:
 		MOVE.B		IMRC,D1				*COPIO EN UN REGISTRO LA COPIA DEL IMR 		
 		AND.B		ISR,D1	 			*FUNCION AND entre iSR y imrc editado 21/02/2020
 		BTST		#0,D1				*MIRO EL BIT 0 DE D1
-		BEQ			TA
+		BNE			TA
 		BTST		#1,D1				*MIRO EL BIT 1 DE D1
-		BEQ			RA
+		BNE			RA
 		BTST		#4,D1				*MIRO EL BIT 4 DE D1
-		BEQ			TB
+		BNE			TB
 		BTST		#5,D1				*MIRO EL BIT 5 DE D1
-		BEQ			RB
+		BNE			RB
+		BRA         FINRTI
+
+
 **********************************************************************************************
 TA:	
 			MOVE.L		#0,D6			*RETORNO DE CARRO A 0
 BUCLETA:	
 			CMP.L		#1,D6			*COMPRUEBO SI HA HABIDO
 			BEQ 		SALTATA
+			MOVE.L		#2,D0
+			BSR 		LINEA
+		  	CMP.L 		#0,D0 			*LINEA =0?
+		  	BEQ 		FINTA
 			MOVE.L		#2,D0 			*METO EN D0 EL BIT 2 (TBA)		
 			BSR 		LEECAR
 			CMP.L 		#13,D0 			*RETORNO DE CARRO?
 			BEQ 		RETCATA
+			CMP.L 		#-1,D0 			*BUFFER VACIO?
+			BEQ 		FINTA
 VUELTATA:
-			MOVE.L		D0,TBA 			*METO EL CARACTER EN EL BUFFER DE Transmision
+			MOVE.B		D0,TBA 			*METO EL CARACTER EN EL BUFFER DE Transmision
 			BRA 		BUCLETA
 
 SALTATA: 	
@@ -825,8 +813,8 @@ RETCATA:
 		  MOVE.L 		#1,D6 			*RETORNO DE CARRO=1
 		  BRA VUELTATA
 FINTA: 	  
-		  BCLR			#0,IMR 			*INHIBO INTERRUPCIONES EN TA
-		  BCLR 			#0,IMRC
+		  BCLR			#$0,IMR 			*INHIBO INTERRUPCIONES EN TA
+		  MOVE.B 		IMR,IMRC
 FINTAF:   
 		  BRA 			FINRTI
 
@@ -837,12 +825,18 @@ TB:
 BUCLETB:	
 			CMP.L		#1,D6			*COMPRUEBO SI HA HABIDO
 			BEQ 		SALTATB
+			MOVE.L		#3,D0 			*METO EN D0 EL 2 PARA LLAMAR A LINEA
+		    BSR 			LINEA
+		    CMP.L 		#0,D0 			*LINEA =0?
+		    BEQ 			FINTB
 			MOVE.L		#3,D0 			*METO EN D0 EL BIT 2 (TBB)		
 			BSR 		LEECAR
 			CMP.L 		#13,D0 			*RETORNO DE CARRO?
 			BEQ 		RETCATB
+			CMP.L 		#-1,D0 			*BUFFER VACIO?
+			BEQ 		FINTB
 VUELTATB:
-			MOVE.L		D0,TBB 			*METO EL CARACTER EN EL BUFFER DE Transmision
+			MOVE.B		D0,TBB 			*METO EL CARACTER EN EL BUFFER DE Transmision
 			BRA 		BUCLETA
 
 SALTATB: 	
@@ -856,36 +850,30 @@ RETCATB:
 		  MOVE.L 		#1,D6 			*RETORNO DE CARRO=1
 		  BRA VUELTATB
 FINTB: 	  
-		  BCLR			#4,IMR 			*INHIBO INTERRUPCIONES EN TB
-		  BCLR 			#4,IMRC
+		  BCLR			#$4,IMRC 			*INHIBO INTERRUPCIONES EN TB
+		  MOVE.B 		IMR,IMRC
 FINTBF:   
 		  BRA 			FINRTI
 
 ***********************************************************************************************
 RA:
+		  MOVE.L 		#0,D1
 		  MOVE.B 		RBA,D1			*CARACTER PARA ESCCAR
 		  MOVE.L 		#0,D0 			*BUFFER PARA ESCCAR(RBA)
 		  BSR 			ESCCAR 			
 		  CMP.L 		#-1,D0 			*SALIDA=-1?
-		  BEQ 			FINRAINI 
-FINRAINI: 
-		  BCLR			#1,IMR 			*INHIBO INTERRUPCIONES EN RA
-		  BCLR 			#1,IMRC
 		  BRA 			FINRTI 		
 
 ************************************************************************************************
 
 
-RB:
+RB:		  
+		  MOVE.L 		#0,D1
 		  MOVE.B 		RBB,D1			*CARACTER PARA ESCCAR
 		  MOVE.L 		#1,D0 			*BUFFER PARA ESCCAR(RBB)
 		  BSR 			ESCCAR 			
 		  CMP.L 		#-1,D0 			*SALIDA=-1?
-		  BEQ 			FINRBINI 
-FINRBINI: 
-		  BCLR			#5,IMR 			*INHIBO INTERRUPCIONES EN RB
-		  BCLR 			#5,IMRC
-		  MOVE.B		IMRC,D0			*check si esta clear  BORRAR EN ENTREGA
+
 		  BRA 			FINRTI 		
 
 ***************************************************************************************************		 
