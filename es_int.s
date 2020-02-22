@@ -570,11 +570,8 @@ PRINTTL:
 
 		 
 		 
-PRINTA:
-		
+PRINTA:	
 		MOVE.L 		#0,D2 			*D2=CONTADOR
-		
-
 BUCPA:
 		ADD.L 		#2,D0 			*PREPARO D0 PARA ESCCAR
 		MOVE.B		(A0)+,D1		*OBTENGO EL CARACTER DEL buffer
@@ -589,11 +586,9 @@ BUCPA:
 		CMP.L 		D2,D3			*MIRO A VER SI HEMOS LLEGADO HASTA TAMAÑO
 		BEQ			DMPILAP
 		BRA 		BUCPA
-
-
 ACTTA:	 
 		 BSR 		ESCCAR
-		 MOVE.L 		-24(A6),A0
+		 MOVE.L 	-24(A6),A0
 		 MOVE.L 	D2,D0 			*METO EL NUMERO DE CARACTERES ESCRITOS
 		 BSET		#0,IMRC
 		 MOVE.B		IMRC,IMR
@@ -602,15 +597,16 @@ ACTTA:
 		 
 		 
 PRINTB:
-		
 		MOVE.L 		#0,D2 			*D2=CONTADOR
 BUCPB:	
 		ADD.L 		#3,D0 			*PREPARO D0 PARA ESCCAR    a lo mejr es better usar move
 		MOVE.B		(A0)+,D1		*OBTENGO EL CARACTER DEL buffer
 		ADD.L 		#1,D2			*CONTADOR++
+		MOVE.L 		A0,-24(A6)
 		CMP.L 		#13,D1			*MIRO A VER SI ES RETORNO DE CARRO
 		BEQ			ACTTB
 		BSR			ESCCAR			*LLAMO A ESCCAR
+		MOVE.L 		-24(A6),A0
 		CMP.L		#-1,D0 			*COMPRUEBO VALOR DEVUELTO POR ESCCAR
 		BEQ			DMPILAP
 		CMP.L 		D2,D3			*MIRO A VER SI HEMOS LLEGADO HASTA TAMAÑO
@@ -619,8 +615,8 @@ BUCPB:
 
 ACTTB:	 
 		
-		 MOVE.L		#13,D1
 		 BSR 		ESCCAR
+		 MOVE.L 	-24(A6),A0
 		 MOVE.L 	D2,D0 			*METO EL NUMERO DE CARACTERES ESCRITOS
 		 BSET		#4,IMRC
 		 MOVE.B		IMRC,IMR
@@ -628,7 +624,7 @@ ACTTB:
 				
 		 
 DMPILAP:  
-		*MOVE.L 		-56(A6),D0 *DEVUELVE PARAMETRO
+		*MOVE.L 	-56(A6),D0 *DEVUELVE PARAMETRO
 		MOVE.L 		-52(A6),D1
 		MOVE.L 		-48(A6),D2
 		MOVE.L 		-44(A6),D3
@@ -664,8 +660,7 @@ SCAN:
 		MOVE.L 		A3,-12(A6)
 		MOVE.L 		A4,-8(A6)
 		MOVE.L 		A5,-4(A6)
-		
-		
+***********************************************************************************			
 		 MOVE.W		14(A6),D1			*D1=tama?
 		 MOVE.W		12(A6),D0      		*D0=descriptor
 		 MOVE.L		8(A6),A0			*A0=buffer CARGO EL Buffer
@@ -675,6 +670,8 @@ SCAN:
 		 BEQ 		SCANB 				*escribe en puerto B 
 		 MOVE.L 	#-1,D0 				*D0=-1 SI NO ES NI 0 NI 1
 		 BRA 		DMPILAS
+**************************************************************************		 
+		 		 
 SCANA: 	 
 
 		 MOVE.L 	#0,D0 				*D0=0   BUSCAMOS CUANTOS CARACTERES HAY EN EL BUFFER DE SCAN A
@@ -682,6 +679,7 @@ SCANA:
 		 MOVE.L 	D0,D2				*D2=LINEA
 		 CMP.W		#0,D2 				*LINEA=0?
 		 BEQ 		FINCEROA	 
+		 MOVE.L 	D2,D3				*D3 REGISTRO TAMAÑO ESCRITO
 		 CMP.W 		D1,D2 				*COMPARO TAMA? Y LINEA
 		 BGT 		FINCEROA
 BUCSA:	 	 
@@ -691,7 +689,7 @@ BUCSA:
 		 BSR 		LEECAR		 
 		 MOVE.B 	D0,(A0)+			*COPIO EL CARACTER EN BUFFER
 		 MOVE.L		#BSA,A4
-		 ADDA.L		#2001,A4
+		 ADDA.L		#2000,A4
 		 CMP.L		A4,A0				*MIRO A VER SI HA LLEGADO AL FINAL DEL buffer
 		 BEQ 		PUNTSA
 		 SUB.L		#1,D2				*N--		
@@ -705,7 +703,7 @@ FINSCANA:
 		 MOVE.L 	D3,D0 				*D0=N	
 		 BRA DMPILAS
 
-
+***************************************************************************************
 SCANB: 	 
 		 
 		 MOVE.L 	#1,D0 				*D0=0
@@ -723,7 +721,7 @@ BUCSB:
 		 BSR 		LEECAR
 		 MOVE.B 	D0,(A0)+			*COPIO EL CARACTER EN BUFFER
 		 MOVE.L		#BSB,A4
-		 ADDA.L		#2001,A4
+		 ADDA.L		#2000,A4
 		 CMP.L		A4,A0				*MIRO A VER SI HA LLEGADO AL FINAL DEL buffer
 		 BEQ 		PUNTSB
 		 SUB.L		#1,D2				*N--		
@@ -828,37 +826,33 @@ FINTAF:
 
 ****************************************************************************************
 TB:
-	
 			MOVE.L		#0,D6			*RETORNO DE CARRO A 0
+			MOVE.L		#3,D0
+			BSR 		LINEA
+		  	CMP.L 		#0,D0 			*LINEA =0?
+		  	BEQ 		FINTB
+		  	CMP.L 		#-1,D0 			*BUFFER ERRONEO?
+			BEQ 		FINTB
+
 BUCLETB:	
 			CMP.L		#1,D6			*COMPRUEBO SI HA HABIDO
-			BEQ 		SALTATB
-			MOVE.L		#3,D0 			*METO EN D0 EL 2 PARA LLAMAR A LINEA
-		    BSR 			LINEA
-		    CMP.L 		#0,D0 			*LINEA =0?
-		    BEQ 			FINTB
-			MOVE.L		#3,D0 			*METO EN D0 EL BIT 2 (TBB)		
+			BEQ 		FINTB		  	
+			MOVE.L		#3,D0 			*METO EN D0 EL BIT 2 		
 			BSR 		LEECAR
 			CMP.L 		#13,D0 			*RETORNO DE CARRO?
 			BEQ 		RETCATB
-			CMP.L 		#-1,D0 			*BUFFER VACIO?
-			BEQ 		FINTB
-VUELTATB:
-			MOVE.B		D0,TBB 			*METO EL CARACTER EN EL BUFFER DE Transmision
-			BRA 		BUCLETA
+			
+VUELTATB:	
+			
+			MOVE.B		D0,TBB			
+			BRA 		BUCLETB
 
-SALTATB: 	
-		  MOVE.B 		#10,TBB 		*METO SALTO DE LINEA
-		  MOVE.L		#3,D0 			*METO EN D0 EL 2 PARA LLAMAR A LINEA
-		  BSR 			LINEA
-		  CMP.L 		#0,D0 			*LINEA =0?
-		  BEQ 			FINTB
-		  BRA 			FINTBF
 RETCATB:  
 		  MOVE.L 		#1,D6 			*RETORNO DE CARRO=1
-		  BRA VUELTATB
+		  MOVE.B 		#10,TBB 		*METO SALTO DE LINEA
+		  BRA BUCLETB
 FINTB: 	  
-		  BCLR			#4,IMRC 			*INHIBO INTERRUPCIONES EN TB
+		  BCLR			#4,IMRC 			*INHIBO INTERRUPCIONES EN TA
 		  MOVE.B 		IMRC,IMR
 FINTBF:   
 		  BRA 			FINRTI
@@ -869,21 +863,15 @@ RA:
 		  MOVE.B 		RBA,D1			*CARACTER PARA ESCCAR
 		  MOVE.L 		#0,D0 			*BUFFER PARA ESCCAR(RBA)
 		  BSR 			ESCCAR 			
-		  CMP.L 		#-1,D0 			*SALIDA=-1?
 		  BRA 			FINRTI 		
 
 ************************************************************************************************
-
-
 RB:		  
 		  MOVE.L 		#0,D1
 		  MOVE.B 		RBB,D1			*CARACTER PARA ESCCAR
 		  MOVE.L 		#1,D0 			*BUFFER PARA ESCCAR(RBB)
 		  BSR 			ESCCAR 			
-		  CMP.L 		#-1,D0 			*SALIDA=-1?
-
 		  BRA 			FINRTI 		
-
 ***************************************************************************************************		 
 		 
 FINRTI:
