@@ -18,10 +18,9 @@ MR2A    EQU     $effc01       * de modo A (escritura/lectura) 		*Configura el mo
 MR2B    EQU     $effc11       * de modo B (escritura/lectura) 		*Configura el modo de operacion de la Duart(modo normal/ECO)
 
 SRA     EQU     $effc03       * de estado A (lectura)		  		*Se consulta el estado de la linea A
-SRB		EQU	    $effc13       * de estado A (lectura)         		*Se consulta el estado de la linea B
-
 CSRA    EQU     $effc03       * de seleccion de reloj A (escritura) *Configura junto con el ACR la velocidad de transmision de la Duart en A(38400)(pag. 39)
-CSRB	EQU     $effc03       * de seleccion de reloj B (escritura) *Configura junto con el ACR la velocidad de transmision de la Duart en B(38400)(pag. 39)
+SRB		EQU	    $effc13       * de estado A (lectura)         		*Se consulta el estado de la linea B
+CSRB	EQU     $effc13       * de seleccion de reloj B (escritura) *Configura junto con el ACR la velocidad de transmision de la Duart en B(38400)(pag. 39)
 ACR		EQU		$effc09	      * de control auxiliar					*Auxiliar de la configuracion del CSRA y CSRB (pag. 39)
 
 CRA     EQU     $effc05       * de control A (escritura)			*habilita o inhibe la transmision y/o recepcion en A
@@ -144,6 +143,7 @@ LEECAR:
 		
 		
 LESA: 		*LEECAR SCAN A
+		MOVE.L			#0,D0
 		MOVE.L 			PSAE,A2		*guardo puntero de escritura de A(scan)
 		MOVE.L 			PSAL,A3		*guardo puntero de lectura de A(scan)
 		CMP.L			A2,A3		*comparo los punteros
@@ -161,6 +161,7 @@ FLESA:	*FIN LEECAR SCAN A
 		BRA FINLE
 		
 LESB: 	*LEECAR SCAN B
+		MOVE.L			#0,D0
 		MOVE.L 			PSBE,A2		*guardo puntero de escritura de A(scan)
 		MOVE.L 			PSBL,A3		*guardo puntero de lectura de A(scan)
 		CMP.L			A2,A3		*comparo los punteros
@@ -178,6 +179,7 @@ FLESB:	*FIN LEECAR SCAN B
 		BRA FINLE
 		
 LEPA: 	*LEECAR PRINT A
+		MOVE.L			#0,D0
 		MOVE.L 			PPAE,A2		*guardo puntero de escritura de A(scan)
 		MOVE.L 			PPAL,A3		*guardo puntero de lectura de A(scan)
 		CMP.L			A2,A3		*comparo los punteros
@@ -194,7 +196,8 @@ FLEPA:	*FIN LEECAR PRINT A
 		MOVE.L			A3,PPAL	*guardo en la direccion el avance del puntero
 		BRA FINLE
 		
-LEPB: 	*LEECAR PRINT B	
+LEPB: 	*LEECAR PRINT B
+		MOVE.L			#0,D0
 		MOVE.L 			PPBE,A2		*guardo puntero de escritura de B(scan)
 		MOVE.L 			PPBL,A3		*guardo puntero de lectura de B(scan)
 		CMP.L			A2,A3		*comparo los punteros
@@ -803,13 +806,14 @@ TA:
 BUCLETA:	
 			CMP.L		#1,D6			*COMPRUEBO SI HA HABIDO
 			BEQ 		FINTA		  	
-			MOVE.L		#2,D0 			*METO EN D0 EL BIT 2 (TBA)		
+			MOVE.L		#2,D0 			*METO EN D0 EL BIT 2 		
 			BSR 		LEECAR
 			CMP.L 		#13,D0 			*RETORNO DE CARRO?
 			BEQ 		RETCATA
 			
-VUELTATA:
-			MOVE.B		D0,TBA 			*METO EL CARACTER EN EL BUFFER DE Transmision
+VUELTATA:	
+			
+			MOVE.B		D0,TBA			
 			BRA 		BUCLETA
 
 RETCATA:  
