@@ -40,10 +40,10 @@ IVR		EQU		$effc19		  * declara el vector de interrupcion (lectura/escritura)
 * Reserva de Memoria
 *********************************
 		
-BPA:	DS.B 	2001     *Reservamos 2001 bytes para el buffer interno de Print linea A
-BPB:	DS.B 	2001	 *Reservamos 2001 bytes para el buffer interno de Print linea B
-BSA:	DS.B 	2001	 *Reservamos 2001 bytes para el buffer interno de Scan linea A
-BSB:	DS.B 	2001	 *Reservamos 2001 bytes para el buffer interno de Scan linea B
+BPA:	DS.B 	2000     *Reservamos 2001 bytes para el buffer interno de Print linea A
+BPB:	DS.B 	2000	 *Reservamos 2001 bytes para el buffer interno de Print linea B
+BSA:	DS.B 	2000	 *Reservamos 2001 bytes para el buffer interno de Scan linea A
+BSB:	DS.B 	2000	 *Reservamos 2001 bytes para el buffer interno de Scan linea B
 
  *Punteros BUFFER
 PPAL:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero print a lectura
@@ -612,7 +612,6 @@ BUCPB:
 		CMP.L 		D2,D3			*MIRO A VER SI HEMOS LLEGADO HASTA TAMAÑO
 		BEQ			DMPILAP
 		BRA 		BUCPB
-
 ACTTB:	 
 		
 		 BSR 		ESCCAR
@@ -639,8 +638,7 @@ DMPILAP:
 		MOVE.L 		-8(A6),A4
 		MOVE.L 		-4(A6),A5
 		UNLK 		A6
-		RTS	
-		 								
+		RTS			 								
 *********************************
 * SCAN (BUFFER,DESCRIPTOR,TAMAÑO(POR PILA))
 *********************************
@@ -774,8 +772,6 @@ RTI:
 		MOVE.L 		A3,-12(A6)
 		MOVE.L 		A4,-8(A6)
 		MOVE.L 		A5,-4(A6)
-
-
 ***********************************************************************************************		
 		MOVE.L		#0,D1
 		MOVE.B		IMRC,D1				*COPIO EN UN REGISTRO LA COPIA DEL IMR 		
@@ -789,11 +785,8 @@ RTI:
 		BTST		#5,D1				*MIRO EL BIT 5 DE D1
 		BNE			RB
 		BRA         FINRTI
-
-
 **********************************************************************************************
 TA:	
-			MOVE.L		#0,D6			*RETORNO DE CARRO A 0
 			MOVE.L		#2,D0
 			BSR 		LINEA
 		  	CMP.L 		#0,D0 			*LINEA =0?
@@ -801,32 +794,32 @@ TA:
 		  	CMP.L 		#-1,D0 			*BUFFER ERRONEO?
 			BEQ 		FINTA
 
-BUCLETA:	
-			CMP.L		#1,D6			*COMPRUEBO SI HA HABIDO
-			BEQ 		FINTA		  	
-			MOVE.L		#2,D0 			*METO EN D0 EL BIT 2 		
+BUCLETA:		  	
+			MOVE.L		#2,D0 			*METO EN D0 2 		
 			BSR 		LEECAR
 			CMP.L 		#13,D0 			*RETORNO DE CARRO?
 			BEQ 		RETCATA
 			
-VUELTATA:	
-			
-			MOVE.B		D0,TBA			
+VUELTATA:				
+			MOVE.B		D0,TBA			*NO RETORNO DE CARRO, SI LINEA, METO CARACTER
 			BRA 		BUCLETA
 
 RETCATA:  
-		  MOVE.L 		#1,D6 			*RETORNO DE CARRO=1
-		  MOVE.B 		#10,TBA 		*METO SALTO DE LINEA
-		  BRA BUCLETA
+		  	MOVE.B		D0,TBA           *NO RETORNO DE CARRO,INTRODUZCO RETORNO DE CARRO
+		  	MOVE.L		D0,D1
+		  	BRA TA
 FINTA: 	  
-		  BCLR			#0,IMRC 			*INHIBO INTERRUPCIONES EN TA
-		  MOVE.B 		IMRC,IMR
+		  	CMP.L		#13,D1			* NO MAS LINEAS, SI RET DE CARRO, METO SALTO DE LINEA
+		  	BNE			FINTA1
+		  	MOVE.B 		#10,TBB
+FINTA1:	
+		  	BCLR		#0,IMRC 			*INHIBO INTERRUPCIONES EN TA
+		  	MOVE.B 		IMRC,IMR
 FINTAF:   
-		  BRA 			FINRTI
+		  	BRA 		FINRTI
 
 ****************************************************************************************
 TB:
-			MOVE.L		#0,D6			*RETORNO DE CARRO A 0
 			MOVE.L		#3,D0
 			BSR 		LINEA
 		  	CMP.L 		#0,D0 			*LINEA =0?
@@ -834,24 +827,24 @@ TB:
 		  	CMP.L 		#-1,D0 			*BUFFER ERRONEO?
 			BEQ 		FINTB
 
-BUCLETB:	
-			CMP.L		#1,D6			*COMPRUEBO SI HA HABIDO
-			BEQ 		FINTB		  	
-			MOVE.L		#3,D0 			*METO EN D0 EL BIT 2 		
+BUCLETB:		  	
+			MOVE.L		#3,D0 			*METO EN D0 3 		
 			BSR 		LEECAR
-			CMP.L 		#13,D0 			*RETORNO DE CARRO?
-			BEQ 		RETCATB
-			
+			CMP.L 		#13,D0 			*RETORNO DE CARRO? 
+			BEQ 		RETCATB			
 VUELTATB:	
-			
-			MOVE.B		D0,TBB			
-			BRA 		BUCLETB
-
+		  	
+		  MOVE.B		D0,TBB			*NO REtORNO DE CARRO, SI LINEA, METO CARACTER
+		  BRA 			BUCLETB
 RETCATB:  
-		  MOVE.L 		#1,D6 			*RETORNO DE CARRO=1
-		  MOVE.B 		#10,TBB 		*METO SALTO DE LINEA
-		  BRA BUCLETB
+		  MOVE.B		D0,TBB			*NO RETORNO DE CARRO,INTRODUZCO RETORNO DE CARRO
+		  MOVE.L		D0,D1
+		  BRA TB
 FINTB: 	  
+		  CMP.L			#13,D1			
+		  BNE			FINTB1
+		  MOVE.B 		#10,TBB 			*NO MAS LINEAS, SI RET DE CARRO, METO SALTO DE LINEA	  
+FINTB1:		  
 		  BCLR			#4,IMRC 			*INHIBO INTERRUPCIONES EN TA
 		  MOVE.B 		IMRC,IMR
 FINTBF:   
@@ -865,14 +858,14 @@ RA:
 		  BSR 			ESCCAR 			
 		  BRA 			FINRTI 		
 
-************************************************************************************************
+**********************************************************************************************
 RB:		  
 		  MOVE.L 		#0,D1
 		  MOVE.B 		RBB,D1			*CARACTER PARA ESCCAR
 		  MOVE.L 		#1,D0 			*BUFFER PARA ESCCAR(RBB)
 		  BSR 			ESCCAR 			
 		  BRA 			FINRTI 		
-***************************************************************************************************		 
+**********************************************************************************************	 
 		 
 FINRTI:
 		MOVE.L 		-56(A6),D0
@@ -889,11 +882,12 @@ FINRTI:
 		MOVE.L 		-12(A6),A3
 		MOVE.L 		-8(A6),A4
 		MOVE.L 		-4(A6),A5
-		UNLK 		A6	
+		UNLK 		A6
 		RTE
 
-
 **********************************FIN RTI*****************************************************
+
+********************************* PRUEBA PROPUESTA********************************************
 BUFP:       DS.B        2100           *Buffer para lectura y escritura de caracteres  
 CONTLP:     DC.W        0           *Contador de lineas
 CONTCP:     DC.W        0          *Contador de caracteres
@@ -919,7 +913,7 @@ BUCPR:      MOVE.W      #0,CONTCP       *Inicializa contador de caracteres
             MOVE.W      #NLINP,CONTLP     *Inicializa contador de lineas
             MOVE.L      #BUFP,DIRLECP     *Direccion de lectura (comienzo del buffer)
 OTRAL:      MOVE.W      #TAMLP,-(A7)     *TamaÃ±o maximo de la linea
-            MOVE.W      #DESBP,-(A7)     *Puerto B
+            MOVE.W      #DESAP,-(A7)     *Puerto B
             MOVE.L      DIRLECP,-(A7)     *Direccion de lectura
 ESPL:       BSR         SCAN
             CMP.L       #0,D0
@@ -933,7 +927,7 @@ ESPL:       BSR         SCAN
             MOVE.L      #BUFP,DIRLECP     *Direccion de lectura (comienzo del buffer)
 OTRAE:      MOVE.W      #TAMBP,TAMEP     *TamaÃ±o de escritura = TamaÃ±o de bloque
 ESPE:       MOVE.W      TAMEP,-(A7)     *TamaÃ±o de escritura
-            MOVE.W      #DESAP,-(A7)     *Puerto A
+            MOVE.W      #DESBP,-(A7)     *Puerto A
             MOVE.L      DIRLECP,-(A7)     * Direccion de lectura
             BSR         PRINT 
             ADD.L       #8,A7         *Restablece la pila
