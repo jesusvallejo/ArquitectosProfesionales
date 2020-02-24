@@ -40,10 +40,10 @@ IVR		EQU		$effc19		  * declara el vector de interrupcion (lectura/escritura)
 * Reserva de Memoria
 *********************************
 		
-BPA:	DS.B 	2000     *Reservamos 2001 bytes para el buffer interno de Print linea A
-BPB:	DS.B 	2000	 *Reservamos 2001 bytes para el buffer interno de Print linea B
-BSA:	DS.B 	2000	 *Reservamos 2001 bytes para el buffer interno de Scan linea A
-BSB:	DS.B 	2000	 *Reservamos 2001 bytes para el buffer interno de Scan linea B
+BPA:	DS.B 	2001     *Reservamos 2001 bytes para el buffer interno de Print linea A
+BPB:	DS.B 	2001	 *Reservamos 2001 bytes para el buffer interno de Print linea B
+BSA:	DS.B 	2001	 *Reservamos 2001 bytes para el buffer interno de Scan linea A
+BSB:	DS.B 	2001	 *Reservamos 2001 bytes para el buffer interno de Scan linea B
 
  *Punteros BUFFER
 PPAL:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero print a lectura
@@ -56,6 +56,7 @@ PSBE:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero scan b escritura
 PSBL:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 
 
 IMRC: 	DS.B	2 *Necesitamos una copiade IMR ya que no es de lectura
+RDC: 	DC.L	0 *Necesitamos una copiade IMR ya que no es de lectura
 
 *********************************	
 * Init
@@ -570,52 +571,48 @@ PRINTTL:
 
 		 
 		 
-PRINTA:	
+PRINTA:
 		MOVE.L 		#0,D2 			*D2=CONTADOR
-BUCPA:
-		ADD.L 		#2,D0 			*PREPARO D0 PARA ESCCAR
+BUCPA:	
+		MOVE.L 		#2,D0 			*PREPARO D0 PARA ESCCAR    a lo mejr es better usar move
 		MOVE.B		(A0)+,D1		*OBTENGO EL CARACTER DEL buffer
 		ADD.L 		#1,D2			*CONTADOR++
-		MOVE.L 		A0,-24(A6)
 		CMP.L 		#13,D1			*MIRO A VER SI ES RETORNO DE CARRO
 		BEQ			ACTTA
 		BSR			ESCCAR			*LLAMO A ESCCAR
-		MOVE.L 		-24(A6),A0
 		CMP.L		#-1,D0 			*COMPRUEBO VALOR DEVUELTO POR ESCCAR
 		BEQ			DMPILAP
 		CMP.L 		D2,D3			*MIRO A VER SI HEMOS LLEGADO HASTA TAMAÑO
 		BEQ			DMPILAP
 		BRA 		BUCPA
 ACTTA:	 
+		 MOVE.L 		#2,D0
 		 BSR 		ESCCAR
-		 MOVE.L 	-24(A6),A0
 		 MOVE.L 	D2,D0 			*METO EL NUMERO DE CARACTERES ESCRITOS
 		 BSET		#0,IMRC
 		 MOVE.B		IMRC,IMR
-		 BRA 		DMPILAP		 
+		 BRA 		DMPILAP	
 		 
 		 
 		 
 PRINTB:
 		MOVE.L 		#0,D2 			*D2=CONTADOR
 BUCPB:	
-		ADD.L 		#3,D0 			*PREPARO D0 PARA ESCCAR    a lo mejr es better usar move
+		MOVE.L 		#3,D0 			*PREPARO D0 PARA ESCCAR    a lo mejr es better usar move
 		MOVE.B		(A0)+,D1		*OBTENGO EL CARACTER DEL buffer
 		ADD.L 		#1,D2			*CONTADOR++
-		MOVE.L 		A0,-24(A6)
+
 		CMP.L 		#13,D1			*MIRO A VER SI ES RETORNO DE CARRO
 		BEQ			ACTTB
 		BSR			ESCCAR			*LLAMO A ESCCAR
-		MOVE.L 		-24(A6),A0
 		CMP.L		#-1,D0 			*COMPRUEBO VALOR DEVUELTO POR ESCCAR
 		BEQ			DMPILAP
 		CMP.L 		D2,D3			*MIRO A VER SI HEMOS LLEGADO HASTA TAMAÑO
 		BEQ			DMPILAP
 		BRA 		BUCPB
 ACTTB:	 
-		
+		 MOVE.L 	#3,D0
 		 BSR 		ESCCAR
-		 MOVE.L 	-24(A6),A0
 		 MOVE.L 	D2,D0 			*METO EL NUMERO DE CARACTERES ESCRITOS
 		 BSET		#4,IMRC
 		 MOVE.B		IMRC,IMR
@@ -687,7 +684,7 @@ BUCSA:
 		 BSR 		LEECAR		 
 		 MOVE.B 	D0,(A0)+			*COPIO EL CARACTER EN BUFFER
 		 MOVE.L		#BSA,A4
-		 ADDA.L		#2000,A4
+		 ADDA.L		#2001,A4
 		 CMP.L		A4,A0				*MIRO A VER SI HA LLEGADO AL FINAL DEL buffer
 		 BEQ 		PUNTSA
 		 SUB.L		#1,D2				*N--		
@@ -719,7 +716,7 @@ BUCSB:
 		 BSR 		LEECAR
 		 MOVE.B 	D0,(A0)+			*COPIO EL CARACTER EN BUFFER
 		 MOVE.L		#BSB,A4
-		 ADDA.L		#2000,A4
+		 ADDA.L		#2001,A4
 		 CMP.L		A4,A0				*MIRO A VER SI HA LLEGADO AL FINAL DEL buffer
 		 BEQ 		PUNTSB
 		 SUB.L		#1,D2				*N--		
@@ -785,66 +782,63 @@ RTI:
 		BTST		#5,D1				*MIRO EL BIT 5 DE D1
 		BNE			RB
 		BRA         FINRTI
-**********************************************************************************************
-TA:	
+**********************************************************************************************	
+TA:			
+			CMP.L		#1,RDC
+			BEQ 		FINTA
 			MOVE.L		#2,D0
 			BSR 		LINEA
 		  	CMP.L 		#0,D0 			*LINEA =0?
-		  	BEQ 		FINTA
+		  	BEQ 		FINTAF
 		  	CMP.L 		#-1,D0 			*BUFFER ERRONEO?
-			BEQ 		FINTA
-
-BUCLETA:		  	
-			MOVE.L		#2,D0 			*METO EN D0 2 		
+			BEQ 		FINTAF		  	
+			MOVE.L		#2,D0 			*METO EN D0 3 		
 			BSR 		LEECAR
-			CMP.L 		#13,D0 			*RETORNO DE CARRO?
-			BEQ 		RETCATA
-			
-VUELTATA:				
-			MOVE.B		D0,TBA			*NO RETORNO DE CARRO, SI LINEA, METO CARACTER
-			BRA 		BUCLETA
+			CMP.L 		#13,D0 			*RETORNO DE CARRO? 
+			BNE 		VUELTATA			
 
 RETCATA:  
-		  	MOVE.B		D0,TBA           *NO RETORNO DE CARRO,INTRODUZCO RETORNO DE CARRO
-		  	MOVE.L		D0,D1
-		  	BRA TA
+			MOVE.L 		#1,RDC
+
+VUELTATA:	
+		  	
+		  MOVE.B		D0,TBA			*NO REtORNO DE CARRO, SI LINEA, METO CARACTER
+		  BRA         	FINTAF 			
 FINTA: 	  
-		  	CMP.L		#13,D1			* NO MAS LINEAS, SI RET DE CARRO, METO SALTO DE LINEA
-		  	BNE			FINTA1
-		  	MOVE.B 		#10,TBB
-FINTA1:	
-		  	BCLR		#0,IMRC 			*INHIBO INTERRUPCIONES EN TA
-		  	MOVE.B 		IMRC,IMR
+		  MOVE.L		#0,RDC
+		  MOVE.B 		#10,TBA 			*NO MAS LINEAS, SI RET DE CARRO, METO SALTO DE LINEA	  
+FINTA1:	    
+		  BCLR			#0,IMRC 			*INHIBO INTERRUPCIONES EN TA
+		  MOVE.B 		IMRC,IMR
 FINTAF:   
-		  	BRA 		FINRTI
+		  BRA 			FINRTI
 
 ****************************************************************************************
-TB:
+TB:			
+			CMP.L		#1,RDC
+			BEQ 		FINTB
 			MOVE.L		#3,D0
 			BSR 		LINEA
 		  	CMP.L 		#0,D0 			*LINEA =0?
-		  	BEQ 		FINTB
+		  	BEQ 		FINTBF
 		  	CMP.L 		#-1,D0 			*BUFFER ERRONEO?
-			BEQ 		FINTB
-
-BUCLETB:		  	
+			BEQ 		FINTBF		  	
 			MOVE.L		#3,D0 			*METO EN D0 3 		
 			BSR 		LEECAR
 			CMP.L 		#13,D0 			*RETORNO DE CARRO? 
-			BEQ 		RETCATB			
+			BNE 		VUELTATB			
+
+RETCATB:  
+			MOVE.L 		#1,RDC
+
 VUELTATB:	
 		  	
 		  MOVE.B		D0,TBB			*NO REtORNO DE CARRO, SI LINEA, METO CARACTER
-		  BRA 			BUCLETB
-RETCATB:  
-		  MOVE.B		D0,TBB			*NO RETORNO DE CARRO,INTRODUZCO RETORNO DE CARRO
-		  MOVE.L		D0,D1
-		  BRA TB
+		  BRA         	FINTBF 			
 FINTB: 	  
-		  CMP.L			#13,D1			
-		  BNE			FINTB1
+		  MOVE.L		#0,RDC
 		  MOVE.B 		#10,TBB 			*NO MAS LINEAS, SI RET DE CARRO, METO SALTO DE LINEA	  
-FINTB1:		  
+FINTB1:	    
 		  BCLR			#4,IMRC 			*INHIBO INTERRUPCIONES EN TA
 		  MOVE.B 		IMRC,IMR
 FINTBF:   
@@ -913,7 +907,7 @@ BUCPR:      MOVE.W      #0,CONTCP       *Inicializa contador de caracteres
             MOVE.W      #NLINP,CONTLP     *Inicializa contador de lineas
             MOVE.L      #BUFP,DIRLECP     *Direccion de lectura (comienzo del buffer)
 OTRAL:      MOVE.W      #TAMLP,-(A7)     *TamaÃ±o maximo de la linea
-            MOVE.W      #DESAP,-(A7)     *Puerto B
+            MOVE.W      #DESBP,-(A7)     *Puerto B
             MOVE.L      DIRLECP,-(A7)     *Direccion de lectura
 ESPL:       BSR         SCAN
             CMP.L       #0,D0
@@ -927,7 +921,7 @@ ESPL:       BSR         SCAN
             MOVE.L      #BUFP,DIRLECP     *Direccion de lectura (comienzo del buffer)
 OTRAE:      MOVE.W      #TAMBP,TAMEP     *TamaÃ±o de escritura = TamaÃ±o de bloque
 ESPE:       MOVE.W      TAMEP,-(A7)     *TamaÃ±o de escritura
-            MOVE.W      #DESBP,-(A7)     *Puerto A
+            MOVE.W      #DESAP,-(A7)     *Puerto A
             MOVE.L      DIRLECP,-(A7)     * Direccion de lectura
             BSR         PRINT 
             ADD.L       #8,A7         *Restablece la pila
