@@ -655,7 +655,10 @@ SCAN:
 		MOVE.L 		A3,-12(A6)
 		MOVE.L 		A4,-8(A6)
 		MOVE.L 		A5,-4(A6)
-***********************************************************************************			
+***********************************************************************************
+		MOVE.L      #0,D0
+		MOVE.L      #0,D1
+
 		 MOVE.W		14(A6),D1			*D1=tama?
 		 MOVE.W		12(A6),D0      		*D0=descriptor
 		 MOVE.L		8(A6),A0			*A0=buffer CARGO EL Buffer
@@ -676,7 +679,7 @@ SCANA:
 		 BEQ 		FINCEROA	 
 		 MOVE.L 	D2,D3				*D3 REGISTRO TAMAÑO ESCRITO
 		 CMP.W 		D1,D2 				*COMPARO TAMA? Y LINEA
-		 BGT 		FINCEROA
+		 BGT 		FINTAMA
 BUCSA:	 	 
 		 CMP.W		#0,D2 				*LINEA=0?
 		 BEQ 		FINSCANA
@@ -692,6 +695,14 @@ BUCSA:
 PUNTSA:	 MOVE.L 	#BSA,A0				*SI HA LLEGADO AL FINAL EL PUNTERO SE VA AL PRINCIPIO DEL BUFFER
 		 SUB.L		#1,D2				*N--
 		 BRA 		BUCSA
+FINTAMA:
+		CMP.W		#0,D2 				*LINEA=0?
+		BEQ 		FINCEROA
+		MOVE.B 	#0,D0 				*PARAMETRO PARA LEECAR
+		BSR 		LEECAR
+        SUB.L		#1,D2				*N--
+        BRA 		FINTAMA
+
 FINCEROA: MOVE.L 	#0,D0 				*DEVUELVE 0 EN D0
 		  BRA DMPILAS
 FINSCANA: 
@@ -708,11 +719,11 @@ SCANB:
 		 BEQ 		FINCEROB
 		 MOVE.L 	D2,D3				*D3 REGISTRO TAMAÑO ESCRITO
 		 CMP.W 		D1,D2 				*COMPARO TAMA? Y LINEA
-		 BGT 		FINCEROB
+		 BGT 		FINTAMB
 BUCSB:	 	
 		 CMP.W		#0,D2 				*LINEA=1? Error 1 editado 18/02/2020
 		 BEQ 		FINSCANB
-		 MOVE.B 	#1,D0 				*PARAMETRO PARA LEECAR
+		 MOVE.L 	#1,D0 				*PARAMETRO PARA LEECAR
 		 BSR 		LEECAR
 		 MOVE.B 	D0,(A0)+			*COPIO EL CARACTER EN BUFFER
 		 MOVE.L		#BSB,A4
@@ -724,6 +735,15 @@ BUCSB:
 PUNTSB:	 MOVE.L 	#BSB,A0				*SI HA LLEGADO AL FINAL EL PUNTERO SE VA AL PRINCIPIO DEL BUFFER
 		 SUB.L		#1,D2				*N--
 		 BRA 		BUCSB
+
+FINTAMB:
+		CMP.W		#0,D2 				*LINEA=0?
+		BEQ 		FINCEROB
+		MOVE.L 		#1,D0 				*PARAMETRO PARA LEECAR
+		BSR 		LEECAR
+        SUB.L		#1,D2				*N--
+        BRA 		FINTAMB
+
 FINCEROB: MOVE.L 	#0,D0 				*DEVUELVE 0 EN D0
 		  BRA DMPILAS
 FINSCANB: MOVE.L 	D3,D0 				*D0=N
@@ -891,8 +911,8 @@ TAMEP:      DC.W        0           *TamaÃ±o de escritura para PRINT
 DESAP:      EQU         0          *Descriptor de linea A
 DESBP:      EQU         1          *Descriptor de linea B 
 NLINP:      EQU         1           *Numero de lineas a leer
-TAMLP:      EQU         50           *TamaÃ±o de linea para SCAN
-TAMBP:      EQU         50           *TamaÃ±o de bloque para PRINT
+TAMLP:      EQU         30           *TamaÃ±o de linea para SCAN
+TAMBP:      EQU         30           *TamaÃ±o de bloque para PRINT
 
 INICIO:
             MOVE.L      #BUS_ERROR,8      * Bus error handler
@@ -907,7 +927,7 @@ BUCPR:      MOVE.W      #0,CONTCP       *Inicializa contador de caracteres
             MOVE.W      #NLINP,CONTLP     *Inicializa contador de lineas
             MOVE.L      #BUFP,DIRLECP     *Direccion de lectura (comienzo del buffer)
 OTRAL:      MOVE.W      #TAMLP,-(A7)     *TamaÃ±o maximo de la linea
-            MOVE.W      #DESAP,-(A7)     *Puerto B
+            MOVE.W      #DESBP,-(A7)     *Puerto B
             MOVE.L      DIRLECP,-(A7)     *Direccion de lectura
 ESPL:       BSR         SCAN
             CMP.L       #0,D0
@@ -921,7 +941,7 @@ ESPL:       BSR         SCAN
             MOVE.L      #BUFP,DIRLECP     *Direccion de lectura (comienzo del buffer)
 OTRAE:      MOVE.W      #TAMBP,TAMEP     *TamaÃ±o de escritura = TamaÃ±o de bloque
 ESPE:       MOVE.W      TAMEP,-(A7)     *TamaÃ±o de escritura
-            MOVE.W      #DESBP,-(A7)     *Puerto A
+            MOVE.W      #DESAP,-(A7)     *Puerto A
             MOVE.L      DIRLECP,-(A7)     * Direccion de lectura
             BSR         PRINT 
             ADD.L       #8,A7         *Restablece la pila
