@@ -586,7 +586,7 @@ BUCPA:
 		BEQ			DMPILAP
 		BRA 		BUCPA
 ACTTA:	 
-		 MOVE.L 		#2,D0
+		 MOVE.L 	#2,D0
 		 BSR 		ESCCAR
 		 MOVE.L 	D2,D0 			*METO EL NUMERO DE CARACTERES ESCRITOS
 		 BSET		#0,IMRC
@@ -891,8 +891,8 @@ TAMEP:      DC.W        0           *TamaÃ±o de escritura para PRINT
 DESAP:      EQU         0          *Descriptor de linea A
 DESBP:      EQU         1          *Descriptor de linea B 
 NLINP:      EQU         1           *Numero de lineas a leer
-TAMLP:      EQU         30           *TamaÃ±o de linea para SCAN
-TAMBP:      EQU         30           *TamaÃ±o de bloque para PRINT
+TAMLP:      EQU         50           *TamaÃ±o de linea para SCAN
+TAMBP:      EQU         50           *TamaÃ±o de bloque para PRINT
 
 INICIO:
             MOVE.L      #BUS_ERROR,8      * Bus error handler
@@ -907,7 +907,7 @@ BUCPR:      MOVE.W      #0,CONTCP       *Inicializa contador de caracteres
             MOVE.W      #NLINP,CONTLP     *Inicializa contador de lineas
             MOVE.L      #BUFP,DIRLECP     *Direccion de lectura (comienzo del buffer)
 OTRAL:      MOVE.W      #TAMLP,-(A7)     *TamaÃ±o maximo de la linea
-            MOVE.W      #DESBP,-(A7)     *Puerto B
+            MOVE.W      #DESAP,-(A7)     *Puerto B
             MOVE.L      DIRLECP,-(A7)     *Direccion de lectura
 ESPL:       BSR         SCAN
             CMP.L       #0,D0
@@ -921,7 +921,7 @@ ESPL:       BSR         SCAN
             MOVE.L      #BUFP,DIRLECP     *Direccion de lectura (comienzo del buffer)
 OTRAE:      MOVE.W      #TAMBP,TAMEP     *TamaÃ±o de escritura = TamaÃ±o de bloque
 ESPE:       MOVE.W      TAMEP,-(A7)     *TamaÃ±o de escritura
-            MOVE.W      #DESAP,-(A7)     *Puerto A
+            MOVE.W      #DESBP,-(A7)     *Puerto A
             MOVE.L      DIRLECP,-(A7)     * Direccion de lectura
             BSR         PRINT 
             ADD.L       #8,A7         *Restablece la pila
