@@ -574,6 +574,18 @@ FINLA:  *FIN LINEA
 *********************************
 * PRINT (BUFFER,DESCRIPTOR,TAMAÑO(POR PILA))
 *********************************
+* switch(descriptor)          contador =0;
+*  case 0:                    while(contador!= tamaño && contadorCaracteres !=0){
+*     printa();----------->    caracter = Esscar(buffer.getCaracter());
+*  case 1:                     CONTADOR++;contadorCaracteres--;
+*     printb();                if(caracter==13)
+*  default:                      retornoDeCarro = true;
+*   return -1;					}
+*                              if(retornoDeCarro)
+*                                 habilitaInterrupcionTransmision();
+*                                 retornoDeCarro = false;
+*                              dmpila();
+
 PRINT:
 		 
 		LINK A6,#-56  *Guardamos todos los registros para asegurar que no hay problemas de concurrencia
@@ -616,25 +628,25 @@ PRINTTL:
 PRINTA:
 		MOVE.L 		#0,D2 			*D2=CONTADOR
 BUCPA:	
-		CMP.W		#0,CCB
+		CMP.W		#0,CCB          *Miro si queda algo por copiar al buffer a de print
 		BEQ			DMPILAPA
 		MOVE.L 		#2,D0 			*PREPARO D0 PARA ESCCAR    a lo mejr es better usar move
 		MOVE.B		(A0)+,D1		*OBTENGO EL CARACTER DEL buffer
-		SUB.W		#1,CCB
+		SUB.W		#1,CCB          * resto un caracter 
 		ADD.L 		#1,D2			*CONTADOR++
 		CMP.L 		#13,D1			*MIRO A VER SI ES RETORNO DE CARRO
 		BEQ			ACTTA
-BUCPA1:	BSR			ESCCAR			*LLAMO A ESCCAR
+BUCPA1:	BSR			ESCCAR			*LLAMO A ESCCAR, escribo el caracter
 		CMP.L		#-1,D0 			*COMPRUEBO VALOR DEVUELTO POR ESCCAR
 		BEQ			DMPILAP
-		CMP.L 		D2,D3			*MIRO A VER SI HEMOS LLEGADO HASTA TAMAÑO
-		BEQ			DMPILAPA
-		BRA 		BUCPA
+		CMP.L 		D2,D3			*MIRO A VER SI HEMOS LLEGADO HASTA TAMAÑO de bloque 
+		BEQ			DMPILAPA         
+		BRA 		BUCPA           *siguiente caracter
 ACTTA:	 
-        MOVE.L      #1,RDCPA
+        MOVE.L      #1,RDCPA        * activa el flag de retorno de carro
         BRA         BUCPA1
 DMPILAPA:
-		 CMP.L		#1,RDCPA
+		 CMP.L		#1,RDCPA        * si hay retorno , activa transmision , si no, no
 		 BNE		DMPILAP 
 		 BSET		#0,IMRC
 		 MOVE.B		IMRC,IMR
@@ -694,6 +706,18 @@ DMPILAP:
 *********************************
 * SCAN (BUFFER,DESCRIPTOR,TAMAÑO(POR PILA))
 *********************************
+* switch(descriptor)          linea = linea();solucion = linea;if(linea==0){return 0;}
+*  case 0:                    while(linea!=0){
+*     scana();----------->      buffer.punteroEscritura.escribir(leecar());contadorCaracteres++;
+*  case 1:                      if(buffer.punteroEscritura.getPos() == buffer.finalBuffer()){
+*     scanb();                     buffer.punteroEscritura= buffer.inicioBuffer;}
+*  default:                     linea--;
+*   return -1;					}
+*                              return solucion;
+*                                
+*                                 
+*                              
+*
 SCAN:  
 		LINK A6,#-56  *Guardamos todos los registros para asegurar que no hay problemas de concurrencia
 		*MOVE.L 		D0,-56(A6) *DEVUELVE PARAMETRO
@@ -711,9 +735,8 @@ SCAN:
 		MOVE.L 		A4,-8(A6)
 		MOVE.L 		A5,-4(A6)
 ***********************************************************************************
-		MOVE.L      #0,D0
-		MOVE.L      #0,D1
-
+		 MOVE.L      #0,D0
+		 MOVE.L      #0,D1
 		 MOVE.W		14(A6),D1			*D1=tama?
 		 MOVE.W		12(A6),D0      		*D0=descriptor
 		 MOVE.L		8(A6),A0			*A0=buffer CARGO EL Buffer
@@ -726,7 +749,6 @@ SCAN:
 **************************************************************************		 
 		 		 
 SCANA: 	 
-
 		 MOVE.B 	#0,D0 				*D0=0   BUSCAMOS CUANTOS CARACTERES HAY EN EL BUFFER DE SCAN A
 		 BSR 		LINEA
 		 MOVE.L 	D0,D2				*D2=LINEA
@@ -812,12 +834,24 @@ DMPILAS:
 *********************************
 * RTI
 *********************************
+* Algoritmo rti
+* switch(and(imrc,isr))        linea=linea();if(retornoDeCarro==true){buffer.escribirCaracter.transmision(10);retornoDeCarro=false;if(linea()==0){inhibirInterrupcionTransmision();}}
+*  case 0:        ta/b ------->   if(linea!=0 && linea!=-1)                
+*    ta();                         caracter = leecar();
+*  case 1:                           if(caracter == 13){retornoDeCarroTA=true;}
+*    ra();                             buffer.escribirCaracter.transmision(caracter);
+*  case 2:		  				  
+*	 tb();                           
+*  case 3:                 ra/b--------> esccar(buffer.getCaracter();)              
+*    rb();                            
+*                                   
+*        
 
 RTI:
 * GUARDAR EN PILA D0-D5 A0-A4 , 6X2 + 5X4 = 32 BYTES A RESERVAR PARA GUARDAR 
 	
 		LINK A6,#-56  *Guardamos todos los registros para asegurar que no hay problemas de concurrencia
-		MOVE.L 		D0,-56(A6) 
+		MOVE.L 		D0,-56(A6)         
 		MOVE.L 		D1,-52(A6)
 		MOVE.L 		D2,-48(A6)
 		MOVE.L 		D3,-44(A6)
@@ -858,23 +892,19 @@ TA:
 			BSR 		LEECAR
 			CMP.L 		#13,D0 			*RETORNO DE CARRO? 
 			BNE 		VUELTATA			
-
 RETCATA:  
 			MOVE.L 		#1,RDCTA
-
-VUELTATA:	
-		  	
+VUELTATA:			  	
 		  MOVE.B		D0,TBA			*NO REtORNO DE CARRO, SI LINEA, METO CARACTER
 		  BRA         	FINTAF 			
 FINTA: 	  
 		  MOVE.L		#0,RDCTA
-		  MOVE.B 		#10,TBA 			*NO MAS LINEAS, SI RET DE CARRO, METO SALTO DE LINEA	  
-FINTA1:	  
+		  MOVE.B 		#10,TBA 			*NO MAS LINEAS, SI RET DE CARRO, METO SALTO DE LINEA	  	  
 		  MOVE.L		#2,D0
 		  BSR 			LINEA
 		  CMP.L 		#0,D0 			*LINEA =0?
 		  BNE           FINTAF  
-		  BCLR			#0,IMRC 			*INHIBO INTERRUPCIONES EN TA
+     	  BCLR			#0,IMRC 			*INHIBO INTERRUPCIONES EN TA
 		  MOVE.B 		IMRC,IMR
 FINTAF:   
 		  BRA 			FINRTI
@@ -893,18 +923,15 @@ TB:
 			BSR 		LEECAR
 			CMP.L 		#13,D0 			*RETORNO DE CARRO? 
 			BNE 		VUELTATB			
-
 RETCATB:  
 			MOVE.L 		#1,RDCTB
 
-VUELTATB:	
-		  	
+VUELTATB:			  	
 		  MOVE.B		D0,TBB			*NO REtORNO DE CARRO, SI LINEA, METO CARACTER
 		  BRA         	FINTBF 			
 FINTB: 	  
 		  MOVE.L		#0,RDCTB
-		  MOVE.B 		#10,TBB 			*NO MAS LINEAS, SI RET DE CARRO, METO SALTO DE LINEA	  
-FINTB1:	  
+		  MOVE.B 		#10,TBB 			*NO MAS LINEAS, SI RET DE CARRO, METO SALTO DE LINEA	  	  
 		  MOVE.L		#3,D0
 		  BSR 			LINEA
 		  CMP.L 		#0,D0 			*LINEA =0?
