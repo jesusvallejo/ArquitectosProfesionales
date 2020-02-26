@@ -46,23 +46,22 @@ BSA:	DS.B 	2001	 *Reservamos 2001 bytes para el buffer interno de Scan linea A
 BSB:	DS.B 	2001	 *Reservamos 2001 bytes para el buffer interno de Scan linea B
 
  *Punteros BUFFER
-PPAL:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero print a lectura
-PPAE:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero print a escritura
-PPBE:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero print b escritura
-PPBL:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 
-PSAE:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 
-PSAL:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 
-PSBE:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 puntero scan b escritura
-PSBL:	DC.L	0 *EDITADO 20/02/2020 , ANTES UN DC.l 0 
+PPAL:	DC.L	0 * Puntero PRINT A lectura
+PPAE:	DC.L	0 * Puntero PRINT A escritura
+PPBE:	DC.L	0 * Puntero PRINT B escritura
+PPBL:	DC.L	0 * Puntero PRINT B lectura
+PSAE:	DC.L	0 * Puntero SCAN A escritura
+PSAL:	DC.L	0 * Puntero SCAN A lectura
+PSBE:	DC.L	0 * Puntero SCAN B escritura
+PSBL:	DC.L	0 * Puntero SCAN B lectura
 
-IMRC: 	DS.B	2 *Necesitamos una copiade IMR ya que no es de lectura
+IMRC: 	DS.B	2 * Necesitamos una copia de IMR ya que no es un registro de lectura
 
-RDCTA: 	DC.L	0 *
-RDCTB: 	DC.L	0 *
-RDCPA: 	DC.L	0 *
-RDCPB: 	DC.L	0 *
-CCB:    DC.W	0 *
-CCBB:   DC.W	0 *
+RDCTA: 	DC.L	0 * Retorno de carro para RTI, en transmision A
+RDCTB: 	DC.L	0 * Retorno de carro para RTI, en transmision B
+RDCPA: 	DC.L	0 * Retorno de carro para PRINT en A
+RDCPB: 	DC.L	0 * Retorno de carro para PRINT en B
+CCB:    DC.W	0 * Contador de caracteres del buffer (SCAN/PRINT)
 *********************************	
 * Init
 *********************************
@@ -84,9 +83,7 @@ INIT:
 		MOVE.B 			#%00010000,CRB		* Reinicia el puntero MR1
 		MOVE.B          #%00000101,CRB      * Transmision y recepcion activados.
 
-		
-		
-		MOVE.B			#$00000040,IVR		* Inicializa el vector  * ESTABA MAL CORREGIDO 20/20/2020
+		MOVE.B			#$00000040,IVR		* Inicializa el vector a hex 40
 		MOVE.B			#%00100010,IMR		* Inicializa interrupciones escritura
 		MOVE.B			#%00100010,IMRC		* Inicializa interrupciones escritura
 
@@ -119,6 +116,18 @@ INIT:
 *********************************
 * Leecar(BUFFER(D0))
 *********************************
+* Algoritmo LEECAR
+* switch(d0)
+*  case 0:
+*    Lesa();  -----------------> if (buffer.punteroEscritura != buffer.punteroLectura){
+*  case 1:                               solucion= buffer.punteroLectura.lee();
+*    Lesb();                             if(buffer.punterolectura != buffer.finalBuffer){
+*  case 2:								    buffer.punteroLectura++;}
+*	 Lepa();                             else {   
+*  case 3:                                  buffer.punteroLectura = buffer.iniciobuffer;}}
+*    Lepb();                      else{
+*                                         return -1;}
+*                                 return solucion
 LEECAR:
 		LINK A6,#-56  *Guardamos todos los registros para asegurar que no hay problemas de concurrencia
 		*MOVE.L 		D0,-56(A6) *NO SE GUARDA EN PILA YA QUE LO USAMOS
@@ -139,7 +148,7 @@ LEECAR:
 
 		AND.L			#3,D0		*guardo los 2 bits mas significativos
 		CMP.L			#0,D0 		*comparo d0 con 00
-		BEQ				LESA		*LEECAR SCAN A
+		BEQ				LESA		*LEECAR SCAN A 
 		CMP.L			#1,D0  		*comparo d0 con 01
 		BEQ				LESB		*LEECAR SCAN B
 		CMP.L			#2,D0  		*comparo d0 con 10
@@ -152,17 +161,17 @@ LESA: 		*LEECAR SCAN A
 		MOVE.L			#0,D0
 		MOVE.L 			PSAE,A2		*guardo puntero de escritura de A(scan)
 		MOVE.L 			PSAL,A3		*guardo puntero de lectura de A(scan)
-		CMP.L			A2,A3		*comparo los punteros
-		BEQ				FINLEC		*si son iguales devuelve en D0=0xFFFFFFFF
-		MOVE.B			(A3)+,D0	*devuelve en D0 el dato
+		CMP.L			A2,A3		*comparo los punteros -----------------------> Miro que los puntero de escritura u lectura no esten a la misma altura
+		BEQ				FINLEC		*si son iguales devuelve en D0=0xFFFFFFFF----> si estan se devuelve -1(buffer vacio)
+		MOVE.B			(A3)+,D0	*devuelve en D0 el dato----------------------> sino se devuelve el dato y se aumenta el puntero
 		MOVE.L			#2001,A4	*guardo 2001 en A4
 		ADDA.L			#BSA,A4		*guardo la direccion final del buffer
-		CMP.L			A4,A3		*comparo A4,A3
+		CMP.L			A4,A3		*comparo A4,A3-------------------------------> si no se ha llegado al final del buffer se guarda el puntero 
 		BEQ				FLESA		
 		MOVE.L			A3,PSAL		*guardo en la direccion el avance del puntero
 		BRA FINLE		
 FLESA:	*FIN LEECAR SCAN A
-		MOVE.L			#BSA,A3		*muevo el puntero a la direccion inicial
+		MOVE.L			#BSA,A3		*muevo el puntero a la direccion inicial-----> Si estamos al final del buffer se pone el puntero al inicio y se guarda
 		MOVE.L			A3,PSAL	    *guardo en la direccion el avance del puntero
 		BRA FINLE
 		
@@ -244,6 +253,18 @@ FINLE:   *FIN LEECAR
 *********************************
 * Esccar(BUFFER(D0),CARACTER(D1))
 *********************************
+* Algoritmo LEECAR
+* switch(d0)
+*  case 0:
+*    esa();  ----------------->     buffer.punteroEscritura.Escribe(caracter);
+*  case 1:                          if(buffer.punteroEscritura == buffer.finalBuffer){
+*    esb();                            buffer.punteroEscritura = buffer.inicioBuffer}
+*  case 2:							if(buffer.punteroEscritura + 1 != buffer.punteroLectura){   
+*	 epa();                            buffer.punteroEscritura++;} 
+*  case 3:                          else{	    
+*    epb();                            return -1;}
+*                                   buffer.punteroEscritura++;
+*                                   return 0;
 ESCCAR:
 		LINK A6,#-56  *Guardamos todos los registros para asegurar que no hay problemas de concurrencia
 		*MOVE.L 		D0,-56(A6) *NO SE SACA DE PILA YA QUE LO USAMOS
@@ -276,7 +297,7 @@ ESCCAR:
 ESA:		*ESCCAR SCAN A
 			MOVE.L 			PSAE,A0			*CARGAMOS PUNTERO ESCRITURA
 			MOVE.L 			PSAL,A2			*CARGAMOS PUNTERO LECTURA
-			MOVE.B			D1,(A0)+		*ESCRIBIMO EN BUFFER
+			MOVE.B			D1,(A0)+		*ESCRIBIMOS EN BUFFER
 			MOVE.L			#0,D0 			*TODO BIEN
 			MOVE.L 			#BSA,A1			
 			ADDA.L 			#2001,A1		*CARGO DIRECCION FINAL DEL BUFFER		
@@ -299,7 +320,7 @@ FESA:		*FIN ESCCAR SCAN A
 EPA:		*ESCCAR PRINT A
 			MOVE.L 			PPAE,A0			*CARGAMOS PUNTERO ESCRITURA
 			MOVE.L 			PPAL,A2			*CARGAMOS PUNTERO LECTURA
-			MOVE.B			D1,(A0)+		*ESCRIBIMO EN BUFFER
+			MOVE.B			D1,(A0)+		*ESCRIBIMOS EN BUFFER
 			MOVE.L			#0,D0 			*TODO BIEN
 			MOVE.L 			#BPA,A1			
 			ADDA.L 			#2001,A1		*CARGO DIRECCION FINAL DEL BUFFER
@@ -322,7 +343,7 @@ FEPA:		*FIN ESCCAR PRINT A
 ESB:		*ESCCAR SCAN B
 			MOVE.L 			PSBE,A0			*CARGAMOS PUNTERO ESCRITURA
 			MOVE.L 			PSBL,A2			*CARGAMOS PUNTERO LECTURA
-			MOVE.B			D1,(A0)+		*ESCRIBIMO EN BUFFER
+			MOVE.B			D1,(A0)+		*ESCRIBIMOS EN BUFFER
 			MOVE.L			#0,D0 			*TODO BIEN
 			MOVE.L 			#BSB,A1			
 			ADDA.L 			#2001,A1		*CARGO DIRECCION FINAL DEL BUFFER			
@@ -345,7 +366,7 @@ FESB:		*FIN ESCCAR SCAN B
 EPB:		*ESCCAR PRINT B
 			MOVE.L 			PPBE,A0			*CARGAMOS PUNTERO ESCRITURA
 			MOVE.L 			PPBL,A2			*CARGAMOS PUNTERO LECTURA
-			MOVE.B			D1,(A0)+		*ESCRIBIMO EN BUFFER
+			MOVE.B			D1,(A0)+		*ESCRIBIMOS EN BUFFER
 			MOVE.L			#0,D0 			*TODO BIEN
 			MOVE.L 			#BPB,A1			
 			ADDA.L 			#2001,A1		*CARGO DIRECCION FINAL DEL BUFFER
@@ -386,6 +407,17 @@ FINE:
 *********************************
 * Linea(BUFFER(D0))
 *********************************
+*
+*
+*
+*
+*
+*
+*
+*
+*
+*
+
 LINEA:
 		LINK A6,#-56  *Guardamos todos los registros para asegurar que no hay problemas de concurrencia
 		*MOVE.L 		D0,-56(A6) *NO SE GUARDA EN PILA YA QUE LO USAMOS
@@ -403,18 +435,18 @@ LINEA:
 		MOVE.L 		A4,-8(A6)
 		MOVE.L 		A5,-4(A6)
 
-		AND.W	#3,D0  *me quedo con los dos bits significativos
+		AND.W	#3,D0  				*Dos bits significativos
 		CMP.L 	#0,D0
-		BEQ		LSA *LINEA SCAN A
+		BEQ		LSA 				*LINEA SCAN A
 		CMP.W 	#2,D0
-		BEQ 	LPA *LINEA PRINT A
+		BEQ 	LPA 				*LINEA PRINT A
 		CMP.W 	#1,D0 
-		BEQ 	LSB *LINEA SCAN B
+		BEQ 	LSB 				*LINEA SCAN B
 		CMP.W 	#3,D0
-		BEQ 	LPB *LINEA PRINT B
+		BEQ 	LPB 				*LINEA PRINT B
 		
 LSA: 	*LINEA SCAN A
-		MOVE.L		#0,D3 *CONTADOR DE LINEA
+		MOVE.L		#0,D3 			*CONTADOR DE LINEA
 		MOVE.L		#BSA,A4
 		ADDA.L		#2001,A4
 		MOVE.L		PSAL,A0 		*A0 PUNTERO 
@@ -423,12 +455,12 @@ BLSA:								* BUCLE LSA
 		CMP.L 		A1,A0			*MIRO A VER SI ESTA FLV
 		BEQ 		FLV
 		MOVE.B		(A0),D5
-		CMP.L 		#13,D5   * USAMOS PUNTERO SCAN DE A LECTURA
+		CMP.L 		#13,D5   		* USAMOS PUNTERO SCAN DE A LECTURA
 		BEQ 		FINLA
 		ADD.L 		#1,D3
 		CMP.L 		A4,A0
 		BEQ 		FLSA
-		ADDA.L 		#1,A0 	  *MUEVO EL PUNTERO
+		ADDA.L 		#1,A0 	  		*MUEVO EL PUNTERO
 		BRA 		BLSA
 FLSA:   *FIN LINEA SCAN A
 		MOVE.L		#BSA,A0			*PONGO DIRECCION INICIAL EN EL PUNTERO
@@ -436,7 +468,7 @@ FLSA:   *FIN LINEA SCAN A
 
 		
 LPA: 	*LINEA PRINT A
-		MOVE.L		#0,D3 *CONTADOR DE LINEA
+		MOVE.L		#0,D3 			*CONTADOR DE LINEA
 		MOVE.L		#BPA,A4
 		ADDA.L		#2001,A4
 		MOVE.L		PPAL,A0 		*A0 PUNTERO 
@@ -445,19 +477,19 @@ BLPA:	* BUCLE LINEA PRINT A
 		CMP.L 		A1,A0			*MIRO A VER SI ESTA FLV
 		BEQ 		FLV
 		MOVE.B		(A0),D5
-		CMP.L 		#13,D5   * USAMOS PUNTERO SCAN DE A LECTURA
+		CMP.L 		#13,D5   		*USAMOS PUNTERO SCAN DE A LECTURA
 		BEQ 		FINLA
 		ADD.L 		#1,D3
 		CMP.L 		A4,A0
 		BEQ 		FLPA
-		ADDA.L 		#1,A0 	  *MUEVO EL PUNTERO
+		ADDA.L 		#1,A0 	  		*MUEVO EL PUNTERO
 		BRA 		BLPA
 FLPA:   *FIN LINEA PRINT A
 		MOVE.L		#BPA,A0			*PONGO DIRECCION INICIAL EN EL PUNTERO
 		BRA 		BLPA
 		
 LSB: 	*LINEA SCAN B
-		MOVE.L		#0,D3 *CONTADOR DE LINEA
+		MOVE.L		#0,D3 			*CONTADOR DE LINEA
 		MOVE.L		#BSB,A4
 		ADDA.L		#2001,A4
 		MOVE.L		PSBL,A0 		*A0 PUNTERO 
@@ -466,19 +498,19 @@ BLSB:	* BUCLE LINEA SCAN B
 		CMP.L 		A1,A0			*MIRO A VER SI ESTA FLV
 		BEQ 		FLV
 		MOVE.B		(A0),D5
-		CMP.L 		#13,D5   * USAMOS PUNTERO SCAN DE A LECTURA
+		CMP.L 		#13,D5   		*USAMOS PUNTERO SCAN DE A LECTURA
 		BEQ 		FINLA
 		ADD.L 		#1,D3
 		CMP.L 		A4,A0
 		BEQ 		FLSB
-		ADDA.L 		#1,A0 	  *MUEVO EL PUNTERO
+		ADDA.L 		#1,A0 	  		*MUEVO EL PUNTERO
 		BRA 		BLSB
 FLSB:   *FIN LINEA SCAN B
 		MOVE.L		#BSB,A0			*PONGO DIRECCION INICIAL EN EL PUNTERO
 		BRA 		BLSB
 		
 LPB: 	*LINEA PRINT B
-		MOVE.L		#0,D3 *CONTADOR DE LINEA
+		MOVE.L		#0,D3 			*CONTADOR DE LINEA
 		MOVE.L		#BPB,A4
 		ADDA.L		#2001,A4
 		MOVE.L		PPBL,A0 		*A0 PUNTERO LECTURA 
@@ -487,12 +519,12 @@ BLPB:	* BUCLE LINEA PRINT B
 		CMP.L 		A1,A0			*MIRO A VER SI ESTA FLV
 		BEQ 		FLV
 		MOVE.B		(A0),D5
-		CMP.L 		#13,D5   * USAMOS PUNTERO SCAN DE A LECTURA
+		CMP.L 		#13,D5   		*USAMOS PUNTERO SCAN DE A LECTURA
 		BEQ 		FINLA
 		ADD.L 		#1,D3
 		CMP.L 		A4,A0
 		BEQ 		FLPB
-		ADDA.L 		#1,A0 	  *MUEVO EL PUNTERO
+		ADDA.L 		#1,A0 	  		*MUEVO EL PUNTERO
 		BRA 		BLPB
 FLPB:	*FIN LINEA PRINT B
 		MOVE.L		#BPB,A0			*PONGO DIRECCION INICIAL EN EL PUNTERO
