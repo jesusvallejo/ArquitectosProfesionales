@@ -412,12 +412,12 @@ FINE:
 *  case 0:                          contador=0;
 *    Lsa();  ----------------->     A0 = buffer.punteroLectura; A1 = buffer.punteroEscritura;
 *  case 1:                          WHILE(A0!=A1){
-*    Lsb();                           if(A0==A1){flv();}  //flv = fin linea vacia
-*  case 2:							  if(A0.leer(); == 13){break;}
-*	 Lpa();                           A0++; 
+*    Lsb();                           if(A0==A1){return 0;};contador++; 
+*  case 2:							  if(A0.leer() == 13){return contador;}
+*	 Lpa();                           A0++;
 *  case 3:                            if(A0 == buffer.finalBuffer){A0=buffer.inicioBuffer;}   
-*    Lpb();                           }
-*                                     flv();
+*    Lpb();                         }
+*                                   return 0;
 *                                     
 LINEA:
 		LINK A6,#-56  *Guardamos todos los registros para asegurar que no hay problemas de concurrencia
