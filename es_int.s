@@ -253,7 +253,7 @@ FINLE:   *FIN LEECAR
 *********************************
 * Esccar(BUFFER(D0),CARACTER(D1))
 *********************************
-* Algoritmo LEECAR
+* Algoritmo ESCCAR
 * switch(d0)
 *  case 0:
 *    esa();  ----------------->     buffer.punteroEscritura.Escribe(caracter);
@@ -407,17 +407,18 @@ FINE:
 *********************************
 * Linea(BUFFER(D0))
 *********************************
-*
-*
-*
-*
-*
-*
-*
-*
-*
-*
-
+* Algoritmo LINEA
+* switch(d0)
+*  case 0:                          contador=0;
+*    Lsa();  ----------------->     A0 = buffer.punteroLectura; A1 = buffer.punteroEscritura;
+*  case 1:                          WHILE(A0!=A1){
+*    Lsb();                           if(A0==A1){flv();}  //flv = fin linea vacia
+*  case 2:							  if(A0.leer(); == 13){break;}
+*	 Lpa();                           A0++; 
+*  case 3:                            if(A0 == buffer.finalBuffer){A0=buffer.inicioBuffer;}   
+*    Lpb();                           }
+*                                     flv();
+*                                     
 LINEA:
 		LINK A6,#-56  *Guardamos todos los registros para asegurar que no hay problemas de concurrencia
 		*MOVE.L 		D0,-56(A6) *NO SE GUARDA EN PILA YA QUE LO USAMOS
@@ -449,7 +450,7 @@ LSA: 	*LINEA SCAN A
 		MOVE.L		#0,D3 			*CONTADOR DE LINEA
 		MOVE.L		#BSA,A4
 		ADDA.L		#2001,A4
-		MOVE.L		PSAL,A0 		*A0 PUNTERO 
+		MOVE.L		PSAL,A0 		*A0 PUNTERO CARGO PUNTERO DE lECTURA
 		MOVE.L 		PSAE,A1 		*CARGO PUNTERO DE ESCRITURA
 BLSA:								* BUCLE LSA
 		CMP.L 		A1,A0			*MIRO A VER SI ESTA FLV
