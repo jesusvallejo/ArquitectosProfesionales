@@ -62,6 +62,8 @@ RDCTB: 	DC.L	0 * Retorno de carro para RTI, en transmision B
 RDCPA: 	DC.L	0 * Retorno de carro para PRINT en A
 RDCPB: 	DC.L	0 * Retorno de carro para PRINT en B
 CCB:    DC.W	0 * Contador de caracteres del buffer (SCAN/PRINT)
+
+
 *********************************	
 * Init
 *********************************
@@ -363,6 +365,7 @@ EPB:		*ESCCAR PRINT B
 			CMP.L 			A0,A1			*A0=A1??
 			BNE				FEPB	
             MOVE.L			#BPB,A0			*muevo el puntero a la direccion inicial
+
 FEPB:		MOVE.L          A0,A3
             ADDA.L          #1,A3
             CMP.L           A3,A2
@@ -611,24 +614,22 @@ PRINTTL:
 		CMP.W		#1,D0				
 		BEQ 		PRINTB 				*escribe en puerto B 
 		MOVE.L 		#-1,D0 				*D0=-1 SI NO ES NI 0 NI 1
-		BRA 		DMPILAP
+		BRA 		DMPILAPM
 
 		 
 		 
 PRINTA:
 		MOVE.L 		#0,D2 			*D2=CONTADOR
 BUCPA:	
-		CMP.W		#0,CCB          *Miro si queda algo por copiar al buffer a de print
-		BEQ			DMPILAPA
+		
 		MOVE.L 		#2,D0 			*PREPARO D0 PARA ESCCAR    a lo mejr es better usar move
 		MOVE.B		(A0)+,D1		*OBTENGO EL CARACTER DEL buffer
-		SUB.W		#1,CCB          * resto un caracter 
 		ADD.L 		#1,D2			*CONTADOR++
 		CMP.L 		#13,D1			*MIRO A VER SI ES RETORNO DE CARRO
 		BEQ			ACTTA
 BUCPA1:	BSR			ESCCAR			*LLAMO A ESCCAR, escribo el caracter
 		CMP.L		#-1,D0 			*COMPRUEBO VALOR DEVUELTO POR ESCCAR
-		BEQ			DMPILAP
+		BEQ			DMPILAPM
 		CMP.L 		D2,D3			*MIRO A VER SI HEMOS LLEGADO HASTA TAMAÑO de bloque 
 		BEQ			DMPILAPA         
 		BRA 		BUCPA           *siguiente caracter
@@ -641,42 +642,40 @@ DMPILAPA:
 		 BSET		#0,IMRC
 		 MOVE.B		IMRC,IMR
 		 MOVE.L		#0,RDCPA
-		 BRA 		BUCPA
 		 
 PRINTB:
 		MOVE.L 		#0,D2 			*D2=CONTADOR
 BUCPB:	
-		CMP.W		#0,CCB         *MIRA SI QUEDAN CARACTERES EN EN BUFFER 
-		BEQ			DMPILAPB
+		 
 		MOVE.L 		#3,D0 			*PREPARO D0 PARA ESCCAR    a lo mejr es better usar move
 		MOVE.B		(A0)+,D1		*OBTENGO EL CARACTER DEL buffer
-		SUB.W		#1,CCB
 		ADD.L 		#1,D2			*CONTADOR++
 		CMP.L 		#13,D1			*MIRO A VER SI ES RETORNO DE CARRO
 		BEQ			ACTTB
 BUCPB1:	BSR			ESCCAR			*LLAMO A ESCCAR
 		CMP.L		#-1,D0 			*COMPRUEBO VALOR DEVUELTO POR ESCCAR
-		BEQ			DMPILAP
+		BEQ			DMPILAPM
 		CMP.L 		D2,D3			*MIRO A VER SI HEMOS LLEGADO HASTA TAMAÑO
 		BEQ			DMPILAPB
 		BRA 		BUCPB
 ACTTB:	 
 		
         MOVE.L      #1,RDCPB
-        BRA         BUCPB1
-
+        BSR			ESCCAR			*LLAMO A ESCCAR
+      
 DMPILAPB:
 		 MOVE.L     RDCPB,D7
 		 CMP.L		#1,D7
 		 BNE		DMPILAP 
 		 BSET		#4,IMRC
 		 MOVE.B		IMRC,IMR
-		 MOVE.L		#0,RDCPB
-		 BRA 		BUCPB	
+		 MOVE.L		#0,RDCPB		         	
 				
 		 
 DMPILAP:
+
 		 MOVE.L 	D2,D0 			*METO EL NUMERO DE CARACTERES ESCRITOS
+DMPILAPM:		 
 		*MOVE.L 	-56(A6),D0 *DEVUELVE PARAMETRO
 		MOVE.L 		-52(A6),D1
 		MOVE.L 		-48(A6),D2
@@ -753,7 +752,6 @@ BUCSA:
 		 MOVE.B 	#0,D0 				*PARAMETRO PARA LEECAR
 		 BSR 		LEECAR		 
 		 MOVE.B 	D0,(A0)+			*COPIO EL CARACTER EN BUFFER
-		 ADD.W 		#1,CCB
 		 MOVE.L		#BSA,A4
 		 ADDA.L		#2000,A4
 		 CMP.L		A4,A0				*MIRO A VER SI HA LLEGADO AL FINAL DEL buffer
@@ -787,7 +785,6 @@ BUCSB:
 		 MOVE.L 	#1,D0 				*PARAMETRO PARA LEECAR
 		 BSR 		LEECAR
 		 MOVE.B 	D0,(A0)+			*COPIO EL CARACTER EN BUFFER
-		 ADD.W 		#1,CCB
 		 MOVE.L		#BSB,A4
 		 ADDA.L		#2000,A4
 		 CMP.L		A4,A0				*MIRO A VER SI HA LLEGADO AL FINAL DEL buffer
@@ -989,7 +986,7 @@ INICIO:
             BSR         INIT
             MOVE.W      #$2000,SR       *Permite interrupciones
 
-      BUCPR:  MOVE.W   #0,CONTC       * Inicializa contador de caracteres
+BUCPR:  MOVE.W   #0,CONTC       * Inicializa contador de caracteres
 		MOVE.W   #NLIN,CONTL    * Inicializa contador de L ́ıneas
 		MOVE.L   #BUFFER,DIRLEC * Direcci ́on de lectura = comienzo del buffer
 OTRAL:  MOVE.W   #TAML,-(A7)    * Tama~no m ́aximo de la l ́ınea
