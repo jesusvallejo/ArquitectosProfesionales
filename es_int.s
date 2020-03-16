@@ -40,10 +40,10 @@ IVR		EQU		$effc19		  * declara el vector de interrupcion (lectura/escritura)
 * Reserva de Memoria
 *********************************
 		
-BPA:	DS.B 	11     *Reservamos 11 bytes para el buffer interno de Print linea A
-BPB:	DS.B 	11	 *Reservamos 11 bytes para el buffer interno de Print linea B
-BSA:	DS.B 	11	 *Reservamos 11 bytes para el buffer interno de Scan linea A
-BSB:	DS.B 	11	 *Reservamos 11 bytes para el buffer interno de Scan linea B
+BPA:	DS.B 	2000     *Reservamos 2000 bytes para el buffer interno de Print linea A
+BPB:	DS.B 	2000	 *Reservamos 2000 bytes para el buffer interno de Print linea B
+BSA:	DS.B 	2000	 *Reservamos 2000 bytes para el buffer interno de Scan linea A
+BSB:	DS.B 	2000	 *Reservamos 2000 bytes para el buffer interno de Scan linea B
 
  *Punteros BUFFER
 PPAL:	DC.L	0 * Puntero PRINT A lectura
@@ -164,7 +164,7 @@ LESA: 		*LEECAR SCAN A
 		CMP.L			A2,A3		*comparo los punteros -----------------------> Miro que los puntero de escritura u lectura no esten a la misma altura
 		BEQ				FINLEC		*si son iguales devuelve en D0=0xFFFFFFFF----> si estan se devuelve -1(buffer vacio)
 		MOVE.B			(A3)+,D0	*devuelve en D0 el dato----------------------> sino se devuelve el dato y se aumenta el puntero
-		MOVE.L			#11,A4	*guardo 11 en A4
+		MOVE.L			#2000,A4	*guardo 2000 en A4
 		ADDA.L			#BSA,A4		*guardo la direccion final del buffer
 		CMP.L			A4,A3		*comparo A4,A3-------------------------------> si no se ha llegado al final del buffer se guarda el puntero 
 		BEQ				FLESA		
@@ -182,7 +182,7 @@ LESB: 	*LEECAR SCAN B
 		CMP.L			A2,A3		*comparo los punteros
 		BEQ				FINLEC		*si son iguales devuelve en D0=0xFFFFFFFF
 		MOVE.B			(A3)+,D0	*devuelve en D0 el dato
-		MOVE.L			#11,A4	*guardo 11 en A4
+		MOVE.L			#2000,A4	*guardo 2000 en A4
 		ADDA.L			#BSB,A4		*guardo la direccion final del buffer
 		CMP.L			A4,A3		*comparo A4,A3
 		BEQ				FLESB		
@@ -200,7 +200,7 @@ LEPA: 	*LEECAR PRINT A
 		CMP.L			A2,A3		*comparo los punteros
 		BEQ				FINLEC		*si son iguales devuelve en D0=0xFFFFFFFF
 		MOVE.B			(A3)+,D0	*devuelve en D0 el dato
-		MOVE.L			#11,A4	*guardo 11 en A4
+		MOVE.L			#2000,A4	*guardo 2000 en A4
 		ADDA.L			#BPA,A4		*guardo la direccion final del buffer
 		CMP.L			A4,A3		*comparo A4,A3								 
 		BEQ				FLEPA												    
@@ -218,7 +218,7 @@ LEPB: 	*LEECAR PRINT B
 		CMP.L			A2,A3		*comparo los punteros
 		BEQ				FINLEC		*si son iguales devuelve en D0=0xFFFFFFFF
 		MOVE.B			(A3)+,D0	*devuelve en D0 el dato
-		MOVE.L			#11,A4	*guardo 11 en A4
+		MOVE.L			#2000,A4	*guardo 2000 en A4
 		ADDA.L			#BPB,A4		*guardo la direccion final del buffer
 		CMP.L			A4,A3		*comparo A4,A3
 		BEQ				FLEPB		
@@ -436,7 +436,7 @@ LINEA:
 LSA: 	*LINEA SCAN A
 		MOVE.L		#0,D3 			*CONTADOR DE LINEA
 		MOVE.L		#BSA,A4
-		ADDA.L		#11,A4
+		ADDA.L		#2000,A4
 		MOVE.L		PSAL,A0 		*A0 PUNTERO CARGO PUNTERO DE lECTURA
 		MOVE.L 		PSAE,A1 		*CARGO PUNTERO DE ESCRITURA
 BLSA:								* BUCLE LSA
@@ -458,7 +458,7 @@ FLSA:   *FIN LINEA SCAN A
 LPA: 	*LINEA PRINT A
 		MOVE.L		#0,D3 			*CONTADOR DE LINEA
 		MOVE.L		#BPA,A4
-		ADDA.L		#11,A4
+		ADDA.L		#2000,A4
 		MOVE.L		PPAL,A0 		*A0 PUNTERO 
 		MOVE.L 		PPAE,A1 		*CARGO PUNTERO DE ESCRITURA
 BLPA:	* BUCLE LINEA PRINT A
@@ -479,7 +479,7 @@ FLPA:   *FIN LINEA PRINT A
 LSB: 	*LINEA SCAN B
 		MOVE.L		#0,D3 			*CONTADOR DE LINEA
 		MOVE.L		#BSB,A4
-		ADDA.L		#11,A4
+		ADDA.L		#2000,A4
 		MOVE.L		PSBL,A0 		*A0 PUNTERO 
 		MOVE.L 		PSBE,A1 		*CARGO PUNTERO DE ESCRITURA
 BLSB:	* BUCLE LINEA SCAN B
@@ -500,7 +500,7 @@ FLSB:   *FIN LINEA SCAN B
 LPB: 	*LINEA PRINT B
 		MOVE.L		#0,D3 			*CONTADOR DE LINEA
 		MOVE.L		#BPB,A4
-		ADDA.L		#11,A4
+		ADDA.L		#2000,A4
 		MOVE.L		PPBL,A0 		*A0 PUNTERO LECTURA 
 		MOVE.L 		PPBE,A1 		*CARGO PUNTERO DE ESCRITURA
 BLPB:	* BUCLE LINEA PRINT B
@@ -752,7 +752,7 @@ BUCSA:
 		 MOVE.B 	D0,(A0)+			*COPIO EL CARACTER EN BUFFER
 		 ADD.W 		#1,CCB
 		 MOVE.L		#BSA,A4
-		 ADDA.L		#11,A4
+		 ADDA.L		#2000,A4
 		 CMP.L		A4,A0				*MIRO A VER SI HA LLEGADO AL FINAL DEL buffer
 		 BEQ 		PUNTSA
 		 SUB.L		#1,D2				*N--		
@@ -786,7 +786,7 @@ BUCSB:
 		 MOVE.B 	D0,(A0)+			*COPIO EL CARACTER EN BUFFER
 		 ADD.W 		#1,CCB
 		 MOVE.L		#BSB,A4
-		 ADDA.L		#11,A4
+		 ADDA.L		#2000,A4
 		 CMP.L		A4,A0				*MIRO A VER SI HA LLEGADO AL FINAL DEL buffer
 		 BEQ 		PUNTSB
 		 SUB.L		#1,D2				*N--		
