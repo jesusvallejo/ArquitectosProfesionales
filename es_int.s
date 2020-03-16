@@ -298,8 +298,7 @@ ESA:		*ESCCAR SCAN A
 			MOVE.L 			PSAE,A0			*CARGAMOS PUNTERO ESCRITURA
 			MOVE.L 			PSAL,A2			*CARGAMOS PUNTERO LECTURA
 			MOVE.L 			#BSA,A1			
-			ADDA.L 			#11,A1		*CARGO DIRECCION FINAL DEL BUFFER
-
+			ADDA.L 			#2000,A1		*CARGO DIRECCION FINAL DEL BUFFER
 			MOVE.L 			#-1,D0
 			CMP.L 			A0,A1			*A0=A1??
 			BNE				FESA			*FINAL DE B			
@@ -315,78 +314,62 @@ FESA:       MOVE.L          A0,A3
 			MOVE.L			A0,PSAE
 			BRA FINE	
 
-
-
-
-
-
-
 EPA:		*ESCCAR PRINT A
 			MOVE.L 			PPAE,A0			*CARGAMOS PUNTERO ESCRITURA
 			MOVE.L 			PPAL,A2			*CARGAMOS PUNTERO LECTURA
+			MOVE.L 			#BPA,A1			
+			ADDA.L 			#2000,A1		*CARGO DIRECCION FINAL DEL BUFFER
+			MOVE.L 			#-1,D0
+			CMP.L 			A0,A1			*A0=A1??
+			BNE				FEPA			*FINAL DE B			
+			MOVE.L			#BPA,A0			*muevo el puntero a la direccion inicial
+
+FEPA:		MOVE.L          A0,A3
+            ADDA.L          #1,A3
+            CMP.L           A3,A2
+            BEQ             FINE            * EL BUFFER ESTA LLENO
+
 			MOVE.B			D1,(A0)+		*ESCRIBIMOS EN BUFFER
 			MOVE.L			#0,D0 			*TODO BIEN
-			MOVE.L 			#BPA,A1			
-			ADDA.L 			#11,A1		*CARGO DIRECCION FINAL DEL BUFFER
-			CMP.L 			A0,A1			*A0=A1??
-			BEQ				EPAFB 			*FINAL DE BUFFER 
-			CMP.L			A0,A2
-			BNE				FEPA	
-			MOVE.L 			#-1,D0
-			BRA FINE			
-EPAFB:		*ESCCAR PRINT A FIN DE BUFFER
-			MOVE.L			#BPA,A0			*muevo el puntero a la direccion inicial
-			CMP.L			A0,A2
-			BNE				FEPA	
-			MOVE.L 			#-1,D0
-			BRA FINE
-FEPA:		*FIN ESCCAR PRINT A
 			MOVE.L			A0,PPAE
-			BRA FINE		
-
+			BRA FINE	
+		
 ESB:		*ESCCAR SCAN B
 			MOVE.L 			PSBE,A0			*CARGAMOS PUNTERO ESCRITURA
 			MOVE.L 			PSBL,A2			*CARGAMOS PUNTERO LECTURA
+			MOVE.L 			#BSB,A1			
+			ADDA.L 			#2000,A1		*CARGO DIRECCION FINAL DEL BUFFER			
+			MOVE.L 			#-1,D0
+			CMP.L 			A0,A1			*A0=A1??
+			BNE				FESB	
+			MOVE.L			#BSB,A0			*muevo el puntero a la direccion inicial		
+
+FESB:		MOVE.L          A0,A3
+            ADDA.L          #1,A3
+            CMP.L           A3,A2
+            BEQ             FINE            * EL BUFFER ESTA LLENO
+
 			MOVE.B			D1,(A0)+		*ESCRIBIMOS EN BUFFER
 			MOVE.L			#0,D0 			*TODO BIEN
-			MOVE.L 			#BSB,A1			
-			ADDA.L 			#11,A1		*CARGO DIRECCION FINAL DEL BUFFER			
-			CMP.L 			A0,A1			*A0=A1??
-			BEQ				ESBFB 			*FINAL DE BUFFER 
-			CMP.L			A0,A2
-			BNE				FESB	
-			MOVE.L 			#-1,D0
-			BRA FINE			
-ESBFB:		*ESCCAR SCAN B FIN DE BUFFER
-			MOVE.L			#BSB,A0			*muevo el puntero a la direccion inicial
-			CMP.L			A0,A2
-			BNE				FESB	
-			MOVE.L 			#-1,D0
-			BRA FINE
-FESB:		*FIN ESCCAR SCAN B
 			MOVE.L			A0,PSBE
-			BRA FINE		
+			BRA FINE			
 
 EPB:		*ESCCAR PRINT B
 			MOVE.L 			PPBE,A0			*CARGAMOS PUNTERO ESCRITURA
 			MOVE.L 			PPBL,A2			*CARGAMOS PUNTERO LECTURA
+			MOVE.L 			#BPB,A1			
+			ADDA.L 			#2000,A1		*CARGO DIRECCION FINAL DEL BUFFER
+			MOVE.L 			#-1,D0
+			CMP.L 			A0,A1			*A0=A1??
+			BNE				FEPB	
+            MOVE.L			#BPB,A0			*muevo el puntero a la direccion inicial
+FEPB:		MOVE.L          A0,A3
+            ADDA.L          #1,A3
+            CMP.L           A3,A2
+            BEQ             FINE            * EL BUFFER ESTA LLENO
+
 			MOVE.B			D1,(A0)+		*ESCRIBIMOS EN BUFFER
 			MOVE.L			#0,D0 			*TODO BIEN
-			MOVE.L 			#BPB,A1			
-			ADDA.L 			#11,A1		*CARGO DIRECCION FINAL DEL BUFFER
-			CMP.L 			A0,A1			*A0=A1??
-			BEQ				EPBFB 			*FINAL DE BUFFER 
-			CMP.L			A0,A2
-			BNE				FEPB	
-			MOVE.L 			#-1,D0
-			BRA FINE			
-EPBFB:		*ESCCAR PRINT B FIN DE BUFFER
-			MOVE.L			#BPB,A0			*muevo el puntero a la direccion inicial
-			CMP.L			A0,A2
-			BNE				FEPB	
-			MOVE.L 			#-1,D0
-			BRA FINE
-FEPB:		*FIN ESCCAR PRINT B
 			MOVE.L			A0,PPBE
 			BRA FINE
 
@@ -1003,15 +986,12 @@ INICIO:
 
             BSR         INIT
             MOVE.W      #$2000,SR       *Permite interrupciones
-
             MOVE.L     #$33,D6
-  
      ABUCLEE:
        MOVE.L      #11,D7
-  
-       ADD.L 		#1,D6
-       MOVE.L       D6,D1
-       BREAK
+
+       ADD.L      #1,D6
+       MOVE.L     D6,D1
      BUCLEE:
      	CMP.L      #0,D7
      	BEQ        ABUCLEL
@@ -1020,8 +1000,7 @@ INICIO:
      	SUB.L      #1,D7
      	BRA        BUCLEE
      ABUCLEL:
-     	 MOVE.L      #11,D7
-     	 BREAK 
+     	 MOVE.L      #11,D7 
      BUCLEL:
         LEE:
      	CMP.L      #0,D7
