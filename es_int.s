@@ -305,8 +305,11 @@ ESA:		*ESCCAR SCAN A
 			CMP.L 			A0,A1			*A0=A1??
 			BNE				FESA			*FINAL DE B			
 			MOVE.L			#BSA,A0			*muevo el puntero a la direccion inicial
+			CMP.L 			A0,A2			*A0=A2??  EL BUFFER ESTA LLENO
+			BEQ				FINE			*
 	
-FESA:       MOVE.L          A0,A3
+FESA:       
+			MOVE.L          A0,A3
             ADDA.L          #1,A3
             CMP.L           A3,A2
             BEQ             FINE            * EL BUFFER ESTA LLENO
@@ -325,6 +328,8 @@ EPA:		*ESCCAR PRINT A
 			CMP.L 			A0,A1			*A0=A1??
 			BNE				FEPA			*FINAL DE B			
 			MOVE.L			#BPA,A0			*muevo el puntero a la direccion inicial
+			CMP.L 			A0,A2			*A0=A2??  EL BUFFER ESTA LLENO
+			BEQ				FINE			*
 
 FEPA:		MOVE.L          A0,A3
             ADDA.L          #1,A3
@@ -345,6 +350,8 @@ ESB:		*ESCCAR SCAN B
 			CMP.L 			A0,A1			*A0=A1??
 			BNE				FESB	
 			MOVE.L			#BSB,A0			*muevo el puntero a la direccion inicial		
+			CMP.L 			A0,A2			*A0=A2??  EL BUFFER ESTA LLENO
+			BEQ				FINE			*	
 
 FESB:		MOVE.L          A0,A3
             ADDA.L          #1,A3
@@ -365,6 +372,8 @@ EPB:		*ESCCAR PRINT B
 			CMP.L 			A0,A1			*A0=A1??
 			BNE				FEPB	
             MOVE.L			#BPB,A0			*muevo el puntero a la direccion inicial
+            CMP.L 			A0,A2			*A0=A2??  EL BUFFER ESTA LLENO
+			BEQ				FINE			*	
 
 FEPB:		MOVE.L          A0,A3
             ADDA.L          #1,A3
@@ -837,7 +846,7 @@ DMPILAS:
 RTI:
 * GUARDAR EN PILA D0-D5 A0-A4 , 6X2 + 5X4 = 32 BYTES A RESERVAR PARA GUARDAR 
 	
-		LINK A6,#-56  *Guardamos todos los registros para asegurar que no hay problemas de concurrencia
+		LINK 		A6,#-56  *Guardamos todos los registros para asegurar que no hay problemas de concurrencia
 		MOVE.L 		D0,-56(A6)         
 		MOVE.L 		D1,-52(A6)
 		MOVE.L 		D2,-48(A6)
@@ -986,37 +995,50 @@ INICIO:
             BSR         INIT
             MOVE.W      #$2000,SR       *Permite interrupciones
 
-BUCPR:  MOVE.W   #0,CONTC       * Inicializa contador de caracteres
-		MOVE.W   #NLIN,CONTL    * Inicializa contador de L ́ıneas
-		MOVE.L   #BUFFER,DIRLEC * Direcci ́on de lectura = comienzo del buffer
-OTRAL:  MOVE.W   #TAML,-(A7)    * Tama~no m ́aximo de la l ́ınea
-		MOVE.W   #DESA,-(A7)    * Puerto A
-		MOVE.L   DIRLEC,-(A7)   * Direcci ́on de lectura
-ESPL:   BSR      SCAN
-		CMP.L    #0,D0
-		BEQ      ESPL           * Si no se ha le ́ıdo una l ́ınea se intenta de nuevo
-		ADD.L    #8,A7          * Restablece la pila
-		ADD.L    D0,DIRLEC      * Calcula la nueva direcci ́on de lectura
-		ADD.W    D0,CONTC       * Actualiza el n ́umero de caracteres le ́ıdos
-		SUB.W    #1,CONTL       * Actualiza el n ́umero de l ́ıneas le ́ıdas. Si no
-		BNE      OTRAL          * se han le ́ıdo todas las l ́ıneas se vuelve a leer
-		MOVE.L   #BUFFER,DIRLEC * Direcci ́on de lectura = comienzo del buffer
-OTRAE:  MOVE.W   #TAMB,TAME     * Tama~no de escritura = Tama~no de bloque
-ESPE:   MOVE.W   TAME,-(A7)     * Tama~no de escritura
-		MOVE.W   #DESB,-(A7)    * Puerto B
-		MOVE.L   DIRLEC,-(A7)   * Direcci ́on de lectura
-		BSR      PRINT
-		ADD.L    #8,A7          * Restablece la pila
-		ADD.L    D0,DIRLEC      * Calcula la nueva direcci ́on del buffer
-		SUB.W    D0,CONTC       * Actualiza el contador de caracteres
-		BEQ      SALIR          * Si no quedan caracteres se acaba
-		SUB.W    D0,TAME        * Actualiza el tama~no de escritura
-		BNE      ESPE           * Si no se ha escrito todo el bloque se insiste
-		CMP.W    #TAMB,CONTC    * Si el node caracteres que quedan es menor que el* tama~no establecido se transmite ese n ́umero
-		BHI      OTRAE          * Siguiente  bloque
-		MOVE.W   CONTC,TAME
-		BRA      ESPE           * Siguiente  bloque
-		SALIR:  BRA      BUCPR
+  ABUCLEE:
+       MOVE.L      #1500,D7
+
+       ADD.L      #1,D6
+       MOVE.L     D6,D1
+     BUCLEE:
+     	CMP.L      #0,D7
+     	BEQ        ABUCLEL
+     	MOVE.L     #2,D0
+     	BSR        ESCCAR
+     	SUB.L      #1,D7
+     	BRA        BUCLEE
+     ABUCLEL:
+     	 MOVE.L      #1500,D7 
+     BUCLEL:
+     	CMP.L      #0,D7
+     	BEQ        ABUCLEE2
+     	MOVE.L     #2,D0
+     	BSR        LEECAR
+     	SUB.L      #1,D7
+     	BRA        BUCLEL
+   ABUCLEE2:
+       MOVE.L      #999,D7
+       BREAK
+       ADD.L      #1,D6
+       MOVE.L     D6,D1
+     BUCLEE2:
+     	CMP.L      #0,D7
+     	BEQ        ABUCLELI	
+     	MOVE.L     #2,D0
+     	BSR        ESCCAR
+     	SUB.L      #1,D7
+     	BRA        BUCLEE2
+     ABUCLELI:
+        MOVE.L     #13,D1
+        MOVE.L     #2,D0
+     	BSR        ESCCAR
+        MOVE.L    #2,D0
+        BREAK
+		BSR 	  LINEA
+
+        BREAK
+
+
 		FIN:    BREAK
 		BUS_ERROR:BREAK                   * Bus error handler
 				  NOP
