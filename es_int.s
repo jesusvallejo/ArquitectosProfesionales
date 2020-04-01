@@ -40,10 +40,10 @@ IVR		EQU		$effc19		  * declara el vector de interrupcion (lectura/escritura)
 * Reserva de Memoria
 *********************************
 		
-BPA:	DS.B 	2000     *Reservamos 2000 bytes para el buffer interno de Print linea A
-BPB:	DS.B 	2000	 *Reservamos 2000 bytes para el buffer interno de Print linea B
-BSA:	DS.B 	2000	 *Reservamos 2000 bytes para el buffer interno de Scan linea A
-BSB:	DS.B 	2000	 *Reservamos 2000 bytes para el buffer interno de Scan linea B
+BPA:	DS.B 	2001     *Reservamos 2000 bytes para el buffer interno de Print linea A
+BPB:	DS.B 	2001	 *Reservamos 2000 bytes para el buffer interno de Print linea B
+BSA:	DS.B 	2001	 *Reservamos 2000 bytes para el buffer interno de Scan linea A
+BSB:	DS.B 	2001	 *Reservamos 2000 bytes para el buffer interno de Scan linea B
 
  *Punteros BUFFER
 PPAL:	DC.L	0 * Puntero PRINT A lectura
@@ -61,7 +61,13 @@ RDCTA: 	DC.L	0 * Retorno de carro para RTI, en transmision A
 RDCTB: 	DC.L	0 * Retorno de carro para RTI, en transmision B
 RDCPA: 	DC.L	0 * Retorno de carro para PRINT en A
 RDCPB: 	DC.L	0 * Retorno de carro para PRINT en B
-CCB:    DC.W	0 * Contador de caracteres del buffer (SCAN/PRINT)
+
+BFSA:    DC.L	0 * FLAG BUFFER LLENO
+BFSB:    DC.L	0 * FLAG BUFFER LLENO
+BFPA:    DC.L	0 * FLAG BUFFER LLENO
+BFPB:    DC.L	0 * FLAG BUFFER LLENO
+
+
 
 
 *********************************	
@@ -184,7 +190,7 @@ LESB: 	*LEECAR SCAN B
 		CMP.L			A2,A3		*comparo los punteros
 		BEQ				FINLEC		*si son iguales devuelve en D0=0xFFFFFFFF
 		MOVE.B			(A3)+,D0	*devuelve en D0 el dato
-		MOVE.L			#2000,A4	*guardo 2000 en A4
+		MOVE.L			#2001,A4	*guardo 2000 en A4
 		ADDA.L			#BSB,A4		*guardo la direccion final del buffer
 		CMP.L			A4,A3		*comparo A4,A3
 		BEQ				FLESB		
@@ -202,7 +208,7 @@ LEPA: 	*LEECAR PRINT A
 		CMP.L			A2,A3		*comparo los punteros
 		BEQ				FINLEC		*si son iguales devuelve en D0=0xFFFFFFFF
 		MOVE.B			(A3)+,D0	*devuelve en D0 el dato
-		MOVE.L			#2000,A4	*guardo 2000 en A4
+		MOVE.L			#2001,A4	*guardo 2000 en A4
 		ADDA.L			#BPA,A4		*guardo la direccion final del buffer
 		CMP.L			A4,A3		*comparo A4,A3								 
 		BEQ				FLEPA												    
@@ -220,7 +226,7 @@ LEPB: 	*LEECAR PRINT B
 		CMP.L			A2,A3		*comparo los punteros
 		BEQ				FINLEC		*si son iguales devuelve en D0=0xFFFFFFFF
 		MOVE.B			(A3)+,D0	*devuelve en D0 el dato
-		MOVE.L			#2000,A4	*guardo 2000 en A4
+		MOVE.L			#2001,A4	*guardo 2000 en A4
 		ADDA.L			#BPB,A4		*guardo la direccion final del buffer
 		CMP.L			A4,A3		*comparo A4,A3
 		BEQ				FLEPB		
@@ -300,7 +306,7 @@ ESA:		*ESCCAR SCAN A
 			MOVE.L 			PSAE,A0			*CARGAMOS PUNTERO ESCRITURA
 			MOVE.L 			PSAL,A2			*CARGAMOS PUNTERO LECTURA
 			MOVE.L 			#BSA,A1			
-			ADDA.L 			#2000,A1		*CARGO DIRECCION FINAL DEL BUFFER
+			ADDA.L 			#2001,A1		*CARGO DIRECCION FINAL DEL BUFFER
 			MOVE.L 			#-1,D0
 			CMP.L 			A0,A1			*A0=A1??
 			BNE				FESA			*FINAL DE B			
@@ -312,18 +318,31 @@ FESA:
 			MOVE.L          A0,A3
             ADDA.L          #1,A3
             CMP.L           A3,A2
-            BEQ             FINE            * EL BUFFER ESTA LLENO
+            BEQ             CESA            * EL BUFFER ESTA LLENO???
 
+            CMP.L           #1,BFSA
+            BNE             FESAA
+            MOVE.L          #0,BFSA
+            ADDA.L          #1,A0
+FESAA:
 			MOVE.B			D1,(A0)+		*ESCRIBIMOS EN BUFFER
 			MOVE.L			#0,D0 			*TODO BIEN
 			MOVE.L			A0,PSAE
-			BRA FINE	
+			BRA FINE
+
+CESA:		CMP.L           #1,BFSA
+			BEQ	            FINE
+            MOVE.B			D1,(A0)+		*ESCRIBIMOS EN BUFFER
+            MOVE.W			#0,D0 			*TODO BIEN
+            MOVE.L          #1,BFSA
+            BRA             FINE
+*---------------------------------------------------
 
 EPA:		*ESCCAR PRINT A
 			MOVE.L 			PPAE,A0			*CARGAMOS PUNTERO ESCRITURA
 			MOVE.L 			PPAL,A2			*CARGAMOS PUNTERO LECTURA
 			MOVE.L 			#BPA,A1			
-			ADDA.L 			#2000,A1		*CARGO DIRECCION FINAL DEL BUFFER
+			ADDA.L 			#2001,A1		*CARGO DIRECCION FINAL DEL BUFFER
 			MOVE.L 			#-1,D0
 			CMP.L 			A0,A1			*A0=A1??
 			BNE				FEPA			*FINAL DE B			
@@ -331,21 +350,35 @@ EPA:		*ESCCAR PRINT A
 			CMP.L 			A0,A2			*A0=A2??  EL BUFFER ESTA LLENO
 			BEQ				FINE			*
 
-FEPA:		MOVE.L          A0,A3
+FEPA:		 
+            MOVE.L          A0,A3
             ADDA.L          #1,A3
             CMP.L           A3,A2
-            BEQ             FINE            * EL BUFFER ESTA LLENO
+            BEQ             CEPA            * EL BUFFER ESTA LLENO ???
 
+            CMP.L           #1,BFPA
+            BNE             FEPAA
+            MOVE.L          #0,BFPA
+            ADDA.L          #1,A0
+
+FEPAA:
 			MOVE.B			D1,(A0)+		*ESCRIBIMOS EN BUFFER
 			MOVE.L			#0,D0 			*TODO BIEN
 			MOVE.L			A0,PPAE
-			BRA FINE	
-		
+			BRA FINE
+
+CEPA:		CMP.L           #1,BFPA
+			BEQ	            FINE
+            MOVE.B			D1,(A0)+		*ESCRIBIMOS EN BUFFER
+            MOVE.L			#0,D0 			*TODO BIEN
+            MOVE.L          #1,BFPA
+            BRA             FINE	
+*-------------------------------------------------------		
 ESB:		*ESCCAR SCAN B
 			MOVE.L 			PSBE,A0			*CARGAMOS PUNTERO ESCRITURA
 			MOVE.L 			PSBL,A2			*CARGAMOS PUNTERO LECTURA
 			MOVE.L 			#BSB,A1			
-			ADDA.L 			#2000,A1		*CARGO DIRECCION FINAL DEL BUFFER			
+			ADDA.L 			#2001,A1		*CARGO DIRECCION FINAL DEL BUFFER			
 			MOVE.L 			#-1,D0
 			CMP.L 			A0,A1			*A0=A1??
 			BNE				FESB	
@@ -353,21 +386,35 @@ ESB:		*ESCCAR SCAN B
 			CMP.L 			A0,A2			*A0=A2??  EL BUFFER ESTA LLENO
 			BEQ				FINE			*	
 
-FESB:		MOVE.L          A0,A3
+FESB:		
+            MOVE.L          A0,A3
             ADDA.L          #1,A3
             CMP.L           A3,A2
-            BEQ             FINE            * EL BUFFER ESTA LLENO
+            BEQ             CESB            * EL BUFFER ESTA LLENO???
 
+            CMP.L           #1,BFSB
+            BNE             FESBB
+			MOVE.L          #0,BFSB
+            ADDA.L          #1,A0
+
+FESBB:
 			MOVE.B			D1,(A0)+		*ESCRIBIMOS EN BUFFER
 			MOVE.L			#0,D0 			*TODO BIEN
 			MOVE.L			A0,PSBE
-			BRA FINE			
+			BRA FINE
 
+CESB:		CMP.L           #1,BFSB
+			BEQ	            FINE
+            MOVE.B			D1,(A0)+		*ESCRIBIMOS EN BUFFER
+            MOVE.L			#0,D0 			*TODO BIEN
+            MOVE.L          #1,BFSB
+            BRA             FINE			
+*------------------------------------------------------------------------
 EPB:		*ESCCAR PRINT B
 			MOVE.L 			PPBE,A0			*CARGAMOS PUNTERO ESCRITURA
 			MOVE.L 			PPBL,A2			*CARGAMOS PUNTERO LECTURA
 			MOVE.L 			#BPB,A1			
-			ADDA.L 			#2000,A1		*CARGO DIRECCION FINAL DEL BUFFER
+			ADDA.L 			#2001,A1		*CARGO DIRECCION FINAL DEL BUFFER
 			MOVE.L 			#-1,D0
 			CMP.L 			A0,A1			*A0=A1??
 			BNE				FEPB	
@@ -378,12 +425,27 @@ EPB:		*ESCCAR PRINT B
 FEPB:		MOVE.L          A0,A3
             ADDA.L          #1,A3
             CMP.L           A3,A2
-            BEQ             FINE            * EL BUFFER ESTA LLENO
+            BEQ             CEPB            * EL BUFFER ESTA LLENO???
+
+
+			CMP.L           #1,BFPB
+            BNE             FEPBB
+			MOVE.L          #0,BFPB
+            ADDA.L          #1,A0
+
+FEPBB:
 
 			MOVE.B			D1,(A0)+		*ESCRIBIMOS EN BUFFER
 			MOVE.L			#0,D0 			*TODO BIEN
 			MOVE.L			A0,PPBE
 			BRA FINE
+
+CEPB:		CMP.L           #1,BFPB
+			BEQ	            FINE
+            MOVE.B			D1,(A0)+		*ESCRIBIMOS EN BUFFER
+            MOVE.L			#0,D0 			*TODO BIEN
+            MOVE.L          #1,BFPB
+            BRA             FINE	
 
 FINE:
 		*MOVE.L 		-56(A6),D0 *NO SE SACA DE PILA YA QUE LO USAMOS
@@ -448,7 +510,7 @@ LINEA:
 LSA: 	*LINEA SCAN A
 		MOVE.L		#0,D3 			*CONTADOR DE LINEA
 		MOVE.L		#BSA,A4
-		ADDA.L		#2000,A4
+		ADDA.L		#2001,A4
 		MOVE.L		PSAL,A0 		*A0 PUNTERO CARGO PUNTERO DE lECTURA
 		MOVE.L 		PSAE,A1 		*CARGO PUNTERO DE ESCRITURA
 BLSA:								* BUCLE LSA
@@ -470,7 +532,7 @@ FLSA:   *FIN LINEA SCAN A
 LPA: 	*LINEA PRINT A
 		MOVE.L		#0,D3 			*CONTADOR DE LINEA
 		MOVE.L		#BPA,A4
-		ADDA.L		#2000,A4
+		ADDA.L		#2001,A4
 		MOVE.L		PPAL,A0 		*A0 PUNTERO 
 		MOVE.L 		PPAE,A1 		*CARGO PUNTERO DE ESCRITURA
 BLPA:	* BUCLE LINEA PRINT A
@@ -492,7 +554,7 @@ FLPA:   *FIN LINEA PRINT A
 LSB: 	*LINEA SCAN B
 		MOVE.L		#0,D3 			*CONTADOR DE LINEA
 		MOVE.L		#BSB,A4
-		ADDA.L		#2000,A4
+		ADDA.L		#2001,A4
 		MOVE.L		PSBL,A0 		*A0 PUNTERO 
 		MOVE.L 		PSBE,A1 		*CARGO PUNTERO DE ESCRITURA
 BLSB:	* BUCLE LINEA SCAN B
@@ -514,7 +576,7 @@ FLSB:   *FIN LINEA SCAN B
 LPB: 	*LINEA PRINT B
 		MOVE.L		#0,D3 			*CONTADOR DE LINEA
 		MOVE.L		#BPB,A4
-		ADDA.L		#2000,A4
+		ADDA.L		#2001,A4
 		MOVE.L		PPBL,A0 		*A0 PUNTERO LECTURA 
 		MOVE.L 		PPBE,A1 		*CARGO PUNTERO DE ESCRITURA
 BLPB:	* BUCLE LINEA PRINT B
@@ -762,7 +824,7 @@ BUCSA:
 		 BSR 		LEECAR		 
 		 MOVE.B 	D0,(A0)+			*COPIO EL CARACTER EN BUFFER
 		 MOVE.L		#BSA,A4
-		 ADDA.L		#2000,A4
+		 ADDA.L		#2001,A4
 		 CMP.L		A4,A0				*MIRO A VER SI HA LLEGADO AL FINAL DEL buffer
 		 BEQ 		PUNTSA
 		 SUB.L		#1,D2				*N--		
@@ -795,7 +857,7 @@ BUCSB:
 		 BSR 		LEECAR
 		 MOVE.B 	D0,(A0)+			*COPIO EL CARACTER EN BUFFER
 		 MOVE.L		#BSB,A4
-		 ADDA.L		#2000,A4
+		 ADDA.L		#2001,A4
 		 CMP.L		A4,A0				*MIRO A VER SI HA LLEGADO AL FINAL DEL buffer
 		 BEQ 		PUNTSB
 		 SUB.L		#1,D2				*N--		
@@ -990,54 +1052,65 @@ TAMB:   EQU     5     * Tama~no de bloque para PRINT
 INICIO:
             MOVE.L      #BUS_ERROR,8      * Bus error handler
             MOVE.L      #ADDRESS_ER,12     * Address error handler
-            MOVE.L      #ILLEGAL_IN,16     * Illegal instruction handler
-            MOVE.L      #PRIV_VIOLT,32     * Privilege violation handler  
+            MOVE.L      #ILLEGAL_IN,16     * Illegal instruction handle 
             BSR         INIT
             MOVE.W      #$2000,SR       *Permite interrupciones
 
-  ABUCLEE:
-       MOVE.L      #1500,D7
-
+      ABUCLEE:
+       MOVE.L      #0,D5
+       MOVE.L      #2000,D7
        ADD.L      #1,D6
        MOVE.L     D6,D1
      BUCLEE:
      	CMP.L      #0,D7
      	BEQ        ABUCLEL
-     	MOVE.L     #2,D0
+     	MOVE.L     #0,D0
      	BSR        ESCCAR
      	SUB.L      #1,D7
      	BRA        BUCLEE
      ABUCLEL:
-     	 MOVE.L      #1500,D7 
+     	 MOVE.L      #10,D7 
+     	 BREAK
      BUCLEL:
      	CMP.L      #0,D7
      	BEQ        ABUCLEE2
-     	MOVE.L     #2,D0
+     	MOVE.L     #0,D0
      	BSR        LEECAR
      	SUB.L      #1,D7
+     	CMP.L      #-1,D0
+     	BEQ        BUCLEL
+     	ADD.L      #1,D5
      	BRA        BUCLEL
    ABUCLEE2:
-       MOVE.L      #999,D7
+       MOVE.L      #10,D7
        BREAK
        ADD.L      #1,D6
        MOVE.L     D6,D1
      BUCLEE2:
      	CMP.L      #0,D7
      	BEQ        ABUCLELI	
-     	MOVE.L     #2,D0
+     	MOVE.L     #0,D0
      	BSR        ESCCAR
      	SUB.L      #1,D7
      	BRA        BUCLEE2
      ABUCLELI:
-        MOVE.L     #13,D1
-        MOVE.L     #2,D0
-     	BSR        ESCCAR
-        MOVE.L    #2,D0
-        BREAK
-		BSR 	  LINEA
+       MOVE.L      #1999,D7
+       BREAK
+     BULEE:
 
-        BREAK
-
+        CMP.L      #0,D7
+     	BEQ        BULEE2
+     	MOVE.L     #0,D0
+     	BSR        LEECAR
+     	SUB.L      #1,D7
+     	CMP.L      #-1,D0
+     	BEQ        BULEE
+     	ADD.L      #1,D5
+     	BRA        BULEE
+    BULEE2:BREAK
+        MOVE.L     #0,D0
+     	BSR        LEECAR
+    
 
 		FIN:    BREAK
 		BUS_ERROR:BREAK                   * Bus error handler
@@ -1047,4 +1120,3 @@ INICIO:
 		ILLEGAL_IN:BREAK                   * Illegal instruction handler
 					NOP
 		PRIV_VIOLT:BREAK                   * Privilege violation handler
-		           NOP
