@@ -6,7 +6,7 @@ Proyecto arquitectura de computadores
 
 
 Fallos(en principio resueltos, pero no testeado en corrector del DATSI)
-
+'''
 Fecha: 06/05/2020     22:27
 		Correccion del usuario z170311 x150319
 
@@ -186,3 +186,4 @@ El resultado correcto deberia ser:
 	0620: 0x39
 	0621: 0x30
 	0622: 0x31
+'''
